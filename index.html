@@ -82,6 +82,61 @@ html.night #followBtn.on{background:#5a2a20;border-color:#5a2a20}
 .board.two{font-size:20px;line-height:1.05;text-align:center}
 .board.sm.two{font-size:13px}
 .board.roz{--sev:var(--roz)}
+/* karta próby hamulca */
+.bk h3{margin:6px 0 0;font:700 13px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.seg{display:flex;background:var(--panel2);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;border:none;background:transparent;min-height:40px;font-weight:700}
+.seg button.on{background:var(--acc);color:var(--ink)}
+.veh{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;background:var(--panel2);border-radius:12px;padding:10px 12px}
+.veh .nm{font:700 17px var(--cond)}
+.veh .nm small{display:block;font:500 12.5px var(--sans);color:var(--mute)}
+.veh .cnt2{display:flex;gap:6px;align-items:center}
+.veh .cnt2 button{min-width:44px;min-height:40px;padding:0;font-size:20px}
+.veh .cnt2 b{min-width:24px;text-align:center;font:700 20px var(--cond)}
+.veh input{grid-column:1/-1;font:16px var(--sans);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+.res{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-radius:14px;overflow:hidden}
+.res div{background:var(--panel2);padding:8px 10px}
+.res small{display:block;font:600 11px var(--sans);color:var(--mute);letter-spacing:.06em}
+.res b{font:700 28px/1.1 var(--cond);font-variant-numeric:tabular-nums}
+.res b i{font:500 13px var(--sans);font-style:normal;color:var(--mute)}
+.verdict{border-radius:12px;padding:10px 12px;font-weight:700;font-size:15px}
+.verdict.ok{background:rgba(52,195,143,.16);color:#7fe0b8}
+.verdict.bad{background:rgba(240,68,58,.2);color:#ff9d97}
+.card20{width:100%;border-collapse:collapse;font-size:14px}
+.card20 td{border-bottom:1px solid var(--line);padding:6px 6px;vertical-align:top}
+.card20 td.n{width:28px;color:var(--mute);font:600 13px var(--cond);text-align:right}
+.card20 td.l{color:var(--mute)}
+.card20 td.v{font:700 18px var(--cond);text-align:right;white-space:nowrap}
+.hist{width:100%;border-collapse:collapse;font-size:12.5px}
+.hist th,.hist td{border:1px solid var(--line);padding:4px 6px;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
+.hist th{color:var(--mute);font-weight:600}
+.hist td:first-child,.hist th:first-child{text-align:left;color:var(--mute)}
+.cat{display:grid;grid-template-columns:1fr 70px 70px 40px;gap:6px;align-items:center}
+.cat input{font:15px var(--sans);color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px;width:100%;min-width:0}
+.cat .hd{font-size:11.5px;color:var(--mute)}
+.cat button{min-height:38px;padding:0}
+/* papierowa karta */
+.paperWrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px}
+.paper{background:#fbfbf7;color:#111;padding:10px;min-width:1240px;font:12px/1.2 "Barlow",system-ui,sans-serif}
+.paper .ttl{text-align:center;font:700 14px "Barlow",sans-serif;letter-spacing:.02em;margin-bottom:6px}
+.paper table{width:100%;border-collapse:collapse;table-layout:fixed}
+.paper td,.paper th{border:1px solid #222;padding:3px 4px;vertical-align:middle}
+.paper .hd td{font-size:11px;height:34px}
+.paper .hd b{display:block;font:600 15px "Barlow Condensed",sans-serif;color:#1d3fa0}
+.paper .lb{font-size:11px}
+.paper .gr{writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;font-size:10.5px;width:22px}
+.paper .nr{text-align:center;width:22px;font-size:11px}
+.paper .unit{white-space:nowrap;font-size:10.5px;text-align:right}
+.paper .c{text-align:center;font:600 15px/1.1 "Barlow Condensed",sans-serif;color:#1d3fa0;overflow-wrap:normal;word-break:normal;hyphens:none}
+.paper .c.sm{font-size:12.5px}
+.paper .c.cur{background:#c9dcae;color:#0b2a6b}
+.paper .c.cur.bad{background:#f3b6b0}
+.paper .num th{font-weight:600;text-align:center;font-size:11px}
+.paper .num th.cur{background:#c9dcae}
+.paper .foot{font-size:10px;margin-top:6px;color:#333}
+#paperFull{position:fixed;inset:0;z-index:2000;background:#fbfbf7;overflow:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top,0px) + 8px) 8px calc(env(safe-area-inset-bottom,0px) + 8px)}
+#paperFull .x{position:fixed;right:calc(env(safe-area-inset-right,0px) + 10px);top:calc(env(safe-area-inset-top,0px) + 10px);z-index:3;background:#111;color:#fff;border:none;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+#paperFull .paper{min-width:1240px;font-size:13px}
 /* dolna karta */
 #card{position:fixed;left:0;right:0;bottom:0;z-index:500;background:var(--panel);border-radius:24px 24px 0 0;
   box-shadow:0 -6px 24px rgba(0,0,0,.5);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
@@ -113,7 +168,8 @@ html.night #followBtn.on{background:#5a2a20;border-color:#5a2a20}
 .hud small{display:block;color:var(--mute);font:600 11px var(--sans);letter-spacing:.08em;text-transform:uppercase}
 .hud b i.u{font:500 14px var(--sans);font-style:normal;color:var(--mute)}
 .hud b{font:600 26px/1.15 var(--cond);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
-.tb{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 14px 14px}
+.tb{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:12px 10px 14px}
+.tb button span{font-size:12.5px;white-space:nowrap}
 .tb button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:64px;padding:6px 2px;font:600 13px var(--sans);border-radius:16px;border:none;background:var(--panel2)}
 
 #gpsBtn.on{background:var(--ok);color:var(--ink)}
@@ -158,6 +214,7 @@ body.nomap #map{display:none}
 .dlg{position:fixed;inset:0;z-index:1000;overscroll-behavior:contain;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center}
 .dlg>div{background:var(--panel);border-top:2px solid var(--line);width:100%;max-width:620px;max-height:92%;overflow:auto;-webkit-overflow-scrolling:touch;border-radius:18px 18px 0 0;
   padding:16px max(16px,env(safe-area-inset-left,0px)) calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
+.dlg>div>*{flex-shrink:0}
 .dlg h2{margin:0;font-size:19px}
 .dlg p{margin:0;color:var(--mute);font-size:13.5px}
 .dlg .acts{display:flex;gap:8px;flex-wrap:wrap}
@@ -208,7 +265,7 @@ button.danger{border-color:var(--v20);color:#ff8a8d}
 </style>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></symbol><symbol id="i-stop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></symbol><symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol><symbol id="i-rozkaz" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M10.4 12.6a2 2 0 1 1 3 3L8 21l-4 1 1-4Z"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5.5"/><path d="M4 13.5V6a2 2 0 0 1 2-2h2"/></symbol><symbol id="i-ustawienia" viewBox="0 0 24 24"><path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/></symbol><symbol id="i-glos" viewBox="0 0 24 24"><path d="M11 4.7a.7.7 0 0 0-1.2-.5L6.4 7.6A1.4 1.4 0 0 1 5.4 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.4a1.4 1.4 0 0 1 1 .4l3.4 3.4a.7.7 0 0 0 1.2-.5z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.4 18.4a9 9 0 0 0 0-12.8"/></symbol><symbol id="i-cisza" viewBox="0 0 24 24"><path d="M11 4.7a.7.7 0 0 0-1.2-.5L6.4 7.6A1.4 1.4 0 0 1 5.4 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.4a1.4 1.4 0 0 1 1 .4l3.4 3.4a.7.7 0 0 0 1.2-.5z"/><path d="M22 9l-6 6M16 9l6 6"/></symbol><symbol id="i-pozycja" viewBox="0 0 24 24"><path d="M2 12h3M19 12h3M12 2v3M12 19v3"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-stacja" viewBox="0 0 24 24"><path d="M4 21h16M6 21V9l6-5 6 5v12M10 21v-5h4v5"/></symbol><symbol id="i-przejazd" viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20"/></symbol><symbol id="i-semafor" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="14" rx="4"/><circle cx="12" cy="6" r="1.5"/><circle cx="12" cy="11" r="1.5"/><path d="M12 16v6"/></symbol><symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol></svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></symbol><symbol id="i-stop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></symbol><symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol><symbol id="i-rozkaz" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M10.4 12.6a2 2 0 1 1 3 3L8 21l-4 1 1-4Z"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5.5"/><path d="M4 13.5V6a2 2 0 0 1 2-2h2"/></symbol><symbol id="i-ustawienia" viewBox="0 0 24 24"><path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/></symbol><symbol id="i-glos" viewBox="0 0 24 24"><path d="M11 4.7a.7.7 0 0 0-1.2-.5L6.4 7.6A1.4 1.4 0 0 1 5.4 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.4a1.4 1.4 0 0 1 1 .4l3.4 3.4a.7.7 0 0 0 1.2-.5z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.4 18.4a9 9 0 0 0 0-12.8"/></symbol><symbol id="i-cisza" viewBox="0 0 24 24"><path d="M11 4.7a.7.7 0 0 0-1.2-.5L6.4 7.6A1.4 1.4 0 0 1 5.4 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.4a1.4 1.4 0 0 1 1 .4l3.4 3.4a.7.7 0 0 0 1.2-.5z"/><path d="M22 9l-6 6M16 9l6 6"/></symbol><symbol id="i-pozycja" viewBox="0 0 24 24"><path d="M2 12h3M19 12h3M12 2v3M12 19v3"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-stacja" viewBox="0 0 24 24"><path d="M4 21h16M6 21V9l6-5 6 5v12M10 21v-5h4v5"/></symbol><symbol id="i-przejazd" viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20"/></symbol><symbol id="i-semafor" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="14" rx="4"/><circle cx="12" cy="6" r="1.5"/><circle cx="12" cy="11" r="1.5"/><path d="M12 16v6"/></symbol><symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol><symbol id="i-hamulec" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v5M12 16v5M3 12h5M16 12h5"/></symbol></svg>
 <div id="map"></div>
 <button id="lineChip" aria-label="Zmień linię i ustawienia">Linia 202 ▾</button>
 <button id="followBtn" class="on" aria-label="Śledź moją pozycję"><svg class="ic"><use href="#i-pozycja"/></svg></button>
@@ -233,6 +290,7 @@ button.danger{border-color:var(--v20);color:#ff8a8d}
     <button id="gpsBtn"><svg class="ic f"><use href="#i-play"/></svg><span>Start GPS</span></button>
     <button id="listBtn"><svg class="ic"><use href="#i-list"/></svg><span>Lista</span></button>
     <button id="rozBtn"><svg class="ic"><use href="#i-rozkaz"/></svg><span>Rozkaz<span class="cnt" id="rozCnt" hidden></span></span></button>
+    <button id="brakeBtn"><svg class="ic"><use href="#i-hamulec"/></svg><span>Hamulec</span></button>
     <button id="setBtn"><svg class="ic"><use href="#i-ustawienia"/></svg><span>Ustawienia</span></button>
   </nav>
 </div>
@@ -243,6 +301,54 @@ button.danger{border-color:var(--v20);color:#ff8a8d}
   <div id="note" hidden></div>
   <div id="list"></div>
 </div></div>
+
+<div class="dlg" id="brakeDlg" hidden><div class="tall bk">
+  <div class="sh"><h2>Karta próby hamulca</h2><button id="brakeClose">Zamknij</button></div>
+  <div class="seg" id="bkKind"><button data-k="S">Próba szczegółowa (S)</button><button data-k="U" class="on">Uproszczona (U)</button></div>
+  <h3>Skład</h3>
+  <div class="grid">
+    <label class="full">Typ i liczba zespołów<select id="bkSet"></select></label>
+  </div>
+  <div class="seg" id="bkLoad"><button data-l="pr">Próżny</button><button data-l="ld">Ładowny</button></div>
+  <div class="grid" id="bkNrs"></div>
+  <h3>Relacja (wymagany % masy hamującej)</h3>
+  <div class="grid">
+    <label>Ze stacji<select id="bkFrom"></select></label>
+    <label>Do stacji<select id="bkTo"></select></label>
+    <label>Pw [%]<input id="bkPw" inputmode="numeric"></label>
+    <label>&nbsp;<div id="bkPwInfo" style="font-size:13px;color:var(--mute);padding-top:8px"></div></label>
+  </div>
+  <div class="res" id="bkRes"></div>
+  <div class="verdict" id="bkVerd"></div>
+  <h3>Dane do karty</h3>
+  <div class="grid">
+    <label>2. Numer pociągu<input id="bkTrain" inputmode="numeric"></label>
+    <label>3. Numer obiegu<input id="bkObieg" inputmode="numeric"></label>
+    <label class="full">4. Miejsce wykonania próby<input id="bkPlace"></label>
+    <label class="full">5. Data i godzina zakończenia<input id="bkTime" type="datetime-local"></label>
+    <label>15. Ciśnienie w PG [MPa]<input id="bkPg" inputmode="decimal" value="0,5"></label>
+    <label>16. Ciśnienie w PZ [MPa]<input id="bkPz" inputmode="decimal" value="0,7"></label>
+  </div>
+  <div class="chips" id="bkYes"></div>
+  <h3>Karta – do przepisania</h3>
+  <div class="grid">
+    <label class="full">Nazwa stacji (nagłówek karty)<input id="bkHStation" placeholder="np. Gdynia Cisowa GCA"></label>
+    <label>Data wystawienia<input id="bkHDate" placeholder="dd.mm.rrrr"></label>
+    <label>Wystawiający<input id="bkHWho" placeholder="imię i nazwisko"></label>
+  </div>
+  <p>Zielona kolumna to bieżąca próba – przepisz ją do tej samej kolumny na papierowej karcie. Przesuń tabelę palcem w bok albo otwórz na cały ekran (najlepiej poziomo).</p>
+  <div class="paperWrap" id="bkPaperWrap"><div class="paper" id="bkPaper"></div></div>
+  <div class="acts"><button class="pri" id="bkSave">Zapisz próbę na karcie</button><button id="bkFull">Cały ekran</button></div>
+  <div class="acts"><button id="bkCopy">Kopiuj jako tekst</button><button class="danger" id="bkNewCard">Nowa karta</button></div>
+  <div id="bkMsg"></div>
+  <table class="card20" id="bkCard" hidden></table>
+  <h3>Historia prób</h3>
+  <div class="tw" id="bkHist"></div>
+  <h3>Masy zespołów (instrukcja SKM t-5)</h3>
+  <div class="tw" id="bkTab"></div>
+</div></div>
+
+<div id="paperFull" hidden><button class="x" id="bkFullClose">✕ Zamknij kartę</button><div class="paper" id="bkPaperFull"></div></div>
 
 <div class="dlg" id="setDlg" hidden><div>
   <div class="sh"><h2>Ustawienia</h2><button id="setClose" class="pri">Gotowe</button></div>
@@ -573,13 +679,26 @@ function nearestTrack(lat,lon){
 /* ===== Mapa ===== */
 const HASMAP=typeof window.L!=='undefined';
 if(!HASMAP){document.body.classList.add('nomap');document.getElementById('map').innerHTML='<div style="padding:24px;color:#e9eef3;font:15px/1.5 system-ui"><b style="font-size:18px">Mapa się nie załadowała</b><br>Ten podgląd blokuje mapę i GPS. Otwórz aplikację w Safari lub Chrome z adresu https:// (instrukcja w czacie). Lista ostrzeżeń poniżej działa.</div>';}
-const map=HASMAP?L.map('map',{zoomControl:true}).setView([54.5,17.8],9):null;
+const map=HASMAP?L.map('map',{zoomControl:false,maxZoom:21}).setView([54.5,17.8],9):null;
 if(HASMAP){
-const esriT=n=>L.tileLayer(`https://server.arcgisonline.com/ArcGIS/rest/services/${n}/MapServer/tile/{z}/{y}/{x}`,{maxZoom:19,attribution:'© Esri, HERE, Garmin, OpenStreetMap'});
-window._osm=esriT('World_Street_Map').addTo(map);
-const sat=esriT('World_Imagery'), topo=esriT('World_Topo_Map');
-const osmL=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
-L.control.layers({'Mapa':window._osm,'Satelita':sat,'Topograficzna':topo,'OpenStreetMap (tylko z hostingu https)':osmL},{},{position:'topright'}).addTo(map);
+const esriT=(n,host)=>L.tileLayer(`https://${host||'server.arcgisonline.com'}/arcgis/rest/services/${n}/MapServer/tile/{z}/{y}/{x}`,{maxZoom:21,maxNativeZoom:19,attribution:'© Esri, Maxar, OpenStreetMap'});
+// Geoportal (GUGiK) – ortofotomapa wysokiej rozdzielczości (piksel 5–25 cm). Usługa WMS nie ma EPSG:3857, więc pytamy w EPSG:4326 – przy dużym przybliżeniu różnica jest niewidoczna.
+const geoOrto=L.tileLayer.wms('https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS/HighResolution',{layers:'Raster',format:'image/jpeg',version:'1.3.0',crs:L.CRS.EPSG4326,maxZoom:21,minZoom:12,tileSize:512,zoomOffset:0,attribution:'© GUGiK – Geoportal.gov.pl'});
+const geoOrtoStd=L.tileLayer.wms('https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS/StandardResolution',{layers:'Raster',format:'image/jpeg',version:'1.3.0',crs:L.CRS.EPSG4326,maxZoom:21,tileSize:512,attribution:'© GUGiK – Geoportal.gov.pl'});
+const geoOrtoAll=L.layerGroup([geoOrtoStd,geoOrto]);
+const street=esriT('World_Street_Map'), sat=esriT('World_Imagery'), clarity=esriT('World_Imagery','clarity.maptiles.arcgis.com'), topo=esriT('World_Topo_Map');
+const osmL=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:21,maxNativeZoom:19,attribution:'© OpenStreetMap'});
+const orm=L.tileLayer('https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png',{maxZoom:21,maxNativeZoom:19,subdomains:'abc',opacity:.9,attribution:'© OpenRailwayMap'});
+const ormSpd=L.tileLayer('https://{s}.tiles.openrailwaymap.org/maxspeed/{z}/{x}/{y}.png',{maxZoom:21,maxNativeZoom:19,subdomains:'abc',opacity:.9,attribution:'© OpenRailwayMap'});
+const BASES={'Mapa':street,'Ortofoto Geoportal (najdokładniejsze)':geoOrtoAll,'Satelita Esri Clarity':clarity,'Satelita Esri':sat,'Topograficzna':topo,'OpenStreetMap':osmL};
+const OVER={'Tory, km i semafory (OpenRailwayMap)':orm,'Prędkości szlakowe (OpenRailwayMap)':ormSpd};
+let bName='Mapa'; try{const b=localStorage.getItem('base'); if(BASES[b]) bName=b;}catch(e){}
+BASES[bName].addTo(map); window._osm=street;
+try{JSON.parse(localStorage.getItem('over')||'[]').forEach(n=>OVER[n]&&OVER[n].addTo(map));}catch(e){}
+L.control.layers(BASES,OVER,{position:'topright'}).addTo(map);
+map.on('baselayerchange',e=>{try{localStorage.setItem('base',e.name);}catch(_){}});
+const saveOver=()=>{try{localStorage.setItem('over',JSON.stringify(Object.keys(OVER).filter(n=>map.hasLayer(OVER[n]))));}catch(_){}};
+map.on('overlayadd overlayremove',saveOver);
 }
 if(HASMAP){const zf=()=>map.getContainer().classList.toggle('far',map.getZoom()<11);map.on('zoomend',zf);zf();}
 const lineLayer=HASMAP?L.layerGroup().addTo(map):null, rLayer=HASMAP?L.layerGroup().addTo(map):null, stLayer=HASMAP?L.layerGroup().addTo(map):null;
@@ -952,7 +1071,7 @@ torSel.onchange=()=>{setupLine();renderNext();renderList();};
 
 /* ===== Panele (telefon) ===== */
 const $$=id=>document.getElementById(id);
-function openSheet(id){['listDlg','setDlg','rozDlg','wosDlg'].forEach(x=>{if(x!==id)$$(x).hidden=true;});$$(id).hidden=false;$$(id).firstElementChild.scrollTop=0;}
+function openSheet(id){['listDlg','setDlg','rozDlg','wosDlg','brakeDlg'].forEach(x=>{if(x!==id)$$(x).hidden=true;});$$(id).hidden=false;$$(id).firstElementChild.scrollTop=0;}
 $$('listBtn').onclick=$$('next').onclick=()=>{openSheet('listDlg');renderList();};
 $$('listClose').onclick=()=>{$$('listDlg').hidden=true;};
 $$('setBtn').onclick=$$('lineChip').onclick=()=>openSheet('setDlg');
@@ -1235,6 +1354,147 @@ $('ocrAdd').onclick=()=>{
   saveLS(ROZ_KEY,ROZ);refreshAll();renderRoz();
   $('ocrMsg').innerHTML=`Dodano <b>${n}</b> pozycji.`+(bad?` <span class="err">${bad} pozycji ma błędny km lub prędkość – popraw i dodaj ponownie.</span>`:'');
   if(!$('ocrList').children.length) $('ocrBar').hidden=true;
+};
+
+/* ===== Karta próby hamulca ===== */
+// Masa własna i hamująca EZT – załącznik do instrukcji SKM t-5 [t]: [masa, masa hamująca]
+const EZT=[
+  {id:'en57',nm:'EN57 (5B+6B+5B)',sh:'EN57',pr:[123,130],ld:[138,144]},
+  {id:'en71',nm:'EN71 (5B+6B+6B+5B)',sh:'EN71',pr:[178,164],ld:[198,225]},
+  {id:'en57-71',nm:'EN57/EN71',sh:'EN57/EN71',pr:[123,130],ld:[138,144]},
+  {id:'akm-mm',nm:'EN57AKM-MM',sh:'EN57AKM',pr:[125,135],ld:[138,162]},
+  {id:'en71ns',nm:'EN71-NS',sh:'EN71',pr:[178,224],ld:[197,257]},
+  {id:'akm-op',nm:'EN57AKM-OP',sh:'EN57AKM',pr:[124,135],ld:[138,162]},
+  {id:'31weg',nm:'31WEg',sh:'31WE',pr:[136,224],ld:[173,282]},
+  {id:'31webb',nm:'31WEbb',sh:'31WE',pr:[145,228],ld:[175,273]},
+  {id:'58we',nm:'58WE',sh:'58WE',pr:[162,250],ld:[197,296]}
+];
+const EZTbyId=id=>EZT.find(e=>e.id===id);
+// Składy do wyboru: każdy typ pojedynczo i podwójnie + para EN57 + EN71
+const SETS=[...EZT.flatMap(e=>[{id:e.id+'|1',nm:`${e.nm} – pojedynczy`,u:[e.id]},{id:e.id+'|2',nm:`${e.nm} – podwójny`,u:[e.id,e.id]}]),
+  {id:'para-57-71',nm:'EN57 + EN71 – para',u:['en57','en71']}];
+// Wymagany % masy hamującej wg relacji (od → do)
+const STAC=['Lębork','Wejherowo','Rumia','Gdynia Chylonia','Gdynia Cisowa','Gdańsk Śródmieście'];
+const PWREL={'Lębork>Gdańsk Śródmieście':100,'Gdańsk Śródmieście>Lębork':103,
+  'Wejherowo>Gdańsk Śródmieście':100,'Gdańsk Śródmieście>Wejherowo':103,
+  'Gdańsk Śródmieście>Gdynia Cisowa':103,'Gdynia Cisowa>Gdańsk Śródmieście':100,
+  'Gdynia Chylonia>Gdańsk Śródmieście':100,
+  'Rumia>Gdańsk Śródmieście':100,'Gdańsk Śródmieście>Rumia':103};
+let BK={card:{cols:[],st:'',dt:'',who:''},kind:'U',set:'akm-mm|2',load:'ld',nr:['',''],from:'Gdańsk Śródmieście',to:'Wejherowo',pw:103,pwMan:false,yes:{e17:true,e18:true,e19:true,e20:true},hist:[]};
+try{Object.assign(BK,JSON.parse(localStorage.getItem('brake2')||'{}'));}catch(e){}
+const bkSave=()=>saveLS('brake2',BK);
+const relPw=()=>PWREL[BK.from+'>'+BK.to];
+function bkCalc(){
+  const set=SETS.find(x=>x.id===BK.set)||SETS[0];
+  let Mo=0,Mhr=0; set.u.forEach(id=>{const e=EZTbyId(id);const [m,mh]=e[BK.load];Mo+=m;Mhr+=mh;});
+  const Pw=parseFloat(String(BK.pw).replace(',','.'))||0;
+  const Mhw=Math.ceil(Mo*Pw/100-1e-9), Pr=Mo?Math.floor(Mhr*100/Mo+1e-9):0;
+  return {set,Mos:Mo,Mo,Mhw,Mhr,Pw,Pr,ok:Mo>0&&Pw>0&&Mhr>=Mhw};
+}
+const YES=[['e17','17. Hamulec elektrodynamiczny'],['e18','18. Sterowanie el-pneum.'],['e19','19. Zamykanie drzwi'],['e20','20. Inne urządzenia']];
+function bkUnits(set){const parts=set.u.map((id,i)=>({sh:EZTbyId(id).sh,n:(BK.nr[i]||'').trim()})).filter(x=>x.n);if(!parts.length)return '';
+  return parts.every(x=>x.sh===parts[0].sh)?`${parts[0].sh} ${parts.map(x=>x.n).join(' / ')}`:parts.map(x=>`${x.sh} ${x.n}`).join(' / ');}
+function bkRows(r){
+  const t=$('bkTime').value?new Date($('bkTime').value):new Date();
+  const dt=t.toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+t.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+  return [[1,'Rodzaj próby',BK.kind],[2,'Numer pociągu',$('bkTrain').value||'—'],[3,'Numer obiegu',$('bkObieg').value||'—'],[4,'Miejsce wykonania próby',$('bkPlace').value||'—'],
+    [5,'Data i godzina zakończenia',dt],[6,'Z zespołu trakcyjnego',bkUnits(r.set)||'—'],[7,'Z innego pojazdu trakcyjnego','—'],[8,'Z urządzenia stacjonarnego','—'],
+    [9,'Mos – masa ogólna składu [t]',r.Mos],[10,'Mo – masa ogólna pociągu [t]',r.Mo],[11,'Mhw – masa hamująca wymagana [t]',r.Mhw],[12,'Mhr – masa hamująca rzeczywista [t]',r.Mhr],
+    [13,'Pw – % wymagany',r.Pw],[14,'Pr – % rzeczywisty',r.Pr],[15,'Ciśnienie w PG [MPa]',$('bkPg').value],[16,'Ciśnienie w PZ [MPa]',$('bkPz').value],
+    ...YES.map(([k,l],i)=>[17+i,l.replace(/^\d+\.\s/,''),BK.yes[k]?'TAK':'NIE'])];
+}
+function bkRender(){
+  $('bkKind').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.k===BK.kind));
+  $('bkLoad').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.l===BK.load));
+  $('bkSet').innerHTML=SETS.map(x=>`<option value="${x.id}" ${x.id===BK.set?'selected':''}>${esc(x.nm)}</option>`).join('');
+  const set=SETS.find(x=>x.id===BK.set)||SETS[0];
+  $('bkNrs').innerHTML=set.u.map((id,i)=>`<label class="${set.u.length===1?'full':''}">Nr ${i+1}. zespołu (${esc(EZTbyId(id).sh)})<input data-nr="${i}" inputmode="numeric" placeholder="np. 1135" value="${esc(BK.nr[i]||'')}"></label>`).join('');
+  $('bkNrs').querySelectorAll('input').forEach(inp=>inp.oninput=()=>{BK.nr[+inp.dataset.nr]=inp.value;bkSave();bkOut();});
+  const opt=v=>STAC.map(st=>`<option ${st===v?'selected':''}>${st}</option>`).join('');
+  $('bkFrom').innerHTML=opt(BK.from); $('bkTo').innerHTML=opt(BK.to);
+  bkPwSync(false);
+  $('bkYes').innerHTML=YES.map(([k,l])=>`<button data-y="${k}" class="${BK.yes[k]?'on':''}">${l}: ${BK.yes[k]?'TAK':'NIE'}</button>`).join('');
+  $('bkYes').querySelectorAll('button').forEach(b=>b.onclick=()=>{BK.yes[b.dataset.y]=!BK.yes[b.dataset.y];bkSave();bkRender();});
+  $('bkTab').innerHTML='<table class="hist"><tr><th>Typ</th><th>próżny m / mh</th><th>ładowny m / mh</th></tr>'+EZT.map(e=>`<tr><td>${esc(e.nm)}</td><td>${e.pr[0]} / ${e.pr[1]}</td><td>${e.ld[0]} / ${e.ld[1]}</td></tr>`).join('')+'</table>';
+  bkOut(); bkHist();
+}
+function bkPwSync(fromRel){
+  const rp=relPw(), info=$('bkPwInfo');
+  if(fromRel&&rp!=null){BK.pw=rp;BK.pwMan=false;}
+  if(!BK.pwMan&&rp!=null) BK.pw=rp;
+  $('bkPw').value=BK.pw;
+  info.innerHTML=BK.from===BK.to?'Wybierz różne stacje.':rp!=null?(BK.pwMan&&+BK.pw!==rp?`<span style="color:var(--v60)">Wpisane ręcznie – dla tej relacji ${rp}%</span>`:`Z tabeli relacji: <b style="color:var(--fg)">${rp}%</b>`):'<span style="color:var(--v60)">Brak tej relacji w tabeli – wpisz Pw z rozkładu jazdy.</span>';
+}
+function paperHtml(curRow,ok){
+  const cols=BK.card.cols.slice(0,12), ci=cols.length<12?cols.length:-1;
+  const val=(j,n)=>{ if(j===ci) return curRow[n-1][2]; const c=cols[j]; return c?c[n-1]:''; };
+  const cell=(j,n)=>`<td class="c${[4,5,6].includes(n)?' sm':''}${j===ci?' cur'+(ok?'':' bad'):''}">${esc(String(val(j,n)??''))}</td>`;
+  const cells=n=>Array.from({length:12},(_,j)=>cell(j,n)).join('');
+  const R=(n,lbl,unit,pre,span)=>{span=span||(pre===undefined?3:1);return `<tr>${pre||''}<td class="lb"${span>1?` colspan="${span}"`:''}>${lbl}</td><td class="unit">${unit||''}</td><td class="nr">${n}</td>${cells(n)}</tr>`;};
+  const st=BK.card.st||$('bkHStation').value, dt=BK.card.dt||$('bkHDate').value, who=BK.card.who||$('bkHWho').value;
+  return `<div class="ttl">KARTA PRÓBY HAMULCA I URZĄDZEŃ PNEUMATYCZNYCH POCIĄGU</div>
+  <table class="hd"><tr><td style="width:45%">Nazwa stacji<b>${esc(st)}</b></td><td>Data wystawienia<b>${esc(dt)}</b></td><td>Imię, nazwisko i podpis wystawiającego<b>${esc(who)}</b></td></tr></table>
+  <table style="margin-top:-1px"><colgroup><col style="width:24px"><col style="width:70px"><col style="width:120px"><col style="width:46px"><col style="width:24px">${'<col>'.repeat(12)}</colgroup>
+  <tr class="num"><th colspan="5">Próba</th>${Array.from({length:12},(_,j)=>`<th class="${j===ci?'cur':''}">${j+1}.</th>`).join('')}</tr>
+  ${R(1,'Rodzaj próby <sup>1)</sup>')}${R(2,'Numer pociągu')}${R(3,'Numer obiegu')}${R(4,'Miejsce wykonania próby')}${R(5,'Data i godzina zakończenia próby')}
+  ${R(6,'z zespołu trakcyjnego','',`<td class="gr" rowspan="3" colspan="2">Próbę wykonano <sup>2)</sup></td>`)}
+  ${R(7,'z innego pojazdu trakcyjnego','','')}${R(8,'z urządzenia stacjonarnego','','')}
+  ${R(9,'Ogólna składu','M<sub>OS</sub> [t]',`<td class="gr" rowspan="6">Dane o pociągu</td><td class="lb" rowspan="2">masa</td>`)}
+  ${R(10,'Ogólna pociągu','M<sub>O</sub> [t]','')}
+  ${R(11,'wymagana','M<sub>hw</sub> [t]',`<td class="lb" rowspan="2">Masa hamująca</td>`)}${R(12,'rzeczywista','M<sub>hr</sub> [t]','')}
+  ${R(13,'wymaganej','P<sub>W</sub> [%]',`<td class="lb" rowspan="2">Procent masy hamującej</td>`)}${R(14,'rzeczywistej','P<sub>R</sub> [%]','')}
+  ${R(15,'hamulca','MPa',`<td class="lb" colspan="2" rowspan="2">Ciśnienie powietrza w przewodzie głównym</td>`)}${R(16,'sprężonego powietrza','MPa','')}
+  ${R(17,'hamulec elektrodynamiczny <sup>3)</sup>','',`<td class="gr" rowspan="4">Sprawne</td>`,2)}${R(18,'układ sterowania hamulcem el-pneum. <sup>3)4)</sup>','','',2)}
+  ${R(19,'układ zamykania drzwi wejściowych <sup>3)5)</sup>','','',2)}${R(20,'inne urządzenia <sup>3)6)</sup>','','',2)}
+  </table>
+  <div class="foot">1) S – próba szczegółowa, U – próba uproszczona. 2) Numer inwentarzowy pojazdu trakcyjnego albo numer stanowiska. 3) Wpisać „tak” lub „nie”.${ci<0?' <b>Karta pełna (12 prób) – zacznij nową kartę.</b>':''}</div>`;
+}
+function bkOut(){
+  const r=bkCalc();
+  $('bkRes').innerHTML=[['Mos',r.Mos,'t'],['Mo',r.Mo,'t'],['Mhw',r.Mhw,'t'],['Mhr',r.Mhr,'t'],['Pw',r.Pw,'%'],['Pr',r.Pr,'%']].map(([l,v,u])=>`<div><small>${l}</small><b>${v}<i> ${u}</i></b></div>`).join('');
+  const v=$('bkVerd'); v.className='verdict '+(r.Pw?(r.ok?'ok':'bad'):'');
+  v.textContent=!r.Pw?'Wpisz Pw.':r.ok?`✓ Masa hamująca wystarczająca: Mhr ${r.Mhr} t ≥ Mhw ${r.Mhw} t (zapas ${r.Mhr-r.Mhw} t)`:`✗ Za mała masa hamująca: brakuje ${r.Mhw-r.Mhr} t`;
+  const rows=bkRows(r); $('bkPaper').innerHTML=paperHtml(rows.map(x=>x),r.ok); if(!$('paperFull').hidden) $('bkPaperFull').innerHTML=paperHtml(rows,r.ok);
+  $('bkCard').innerHTML=rows.map(([n,l,val])=>`<tr><td class="n">${n}</td><td class="l">${esc(l)}</td><td class="v">${esc(String(val))}</td></tr>`).join('');
+}
+function bkHist(){
+  if(!BK.hist.length){$('bkHist').innerHTML='<p>Brak zapisanych prób.</p>';return;}
+  const H=BK.hist.slice(0,12);
+  $('bkHist').innerHTML=`<table class="hist"><tr><th>wiersz</th>${H.map((h,j)=>`<th>${j+1}. <button data-hd="${j}" style="min-height:26px;padding:0 6px;font-size:12px" aria-label="Usuń próbę">✕</button></th>`).join('')}</tr>`+
+    H[0].rows.map((row,i)=>`<tr><td>${row[0]}. ${esc(row[1]).slice(0,22)}</td>${H.map(h=>`<td>${esc(String(h.rows[i]?h.rows[i][2]:''))}</td>`).join('')}</tr>`).join('')+'</table>';
+  $('bkHist').querySelectorAll('button[data-hd]').forEach(b=>b.onclick=()=>{BK.hist.splice(+b.dataset.hd,1);bkSave();bkHist();});
+}
+$('bkKind').querySelectorAll('button').forEach(b=>b.onclick=()=>{BK.kind=b.dataset.k;bkSave();bkRender();});
+$('bkLoad').querySelectorAll('button').forEach(b=>b.onclick=()=>{BK.load=b.dataset.l;bkSave();bkRender();});
+$('bkSet').onchange=()=>{BK.set=$('bkSet').value;bkSave();bkRender();};
+$('bkFrom').onchange=()=>{BK.from=$('bkFrom').value;bkPwSync(true);bkSave();bkOut();};
+$('bkTo').onchange=()=>{BK.to=$('bkTo').value;bkPwSync(true);bkSave();bkOut();};
+$('bkPw').oninput=()=>{BK.pw=$('bkPw').value;BK.pwMan=true;bkPwSync(false);bkSave();bkOut();};
+['bkTrain','bkObieg','bkPlace','bkTime','bkPg','bkPz'].forEach(id=>$(id).addEventListener('input',bkOut));
+$('bkSave').onclick=()=>{const r=bkCalc();if(!r.Pw){$('bkMsg').textContent='Wpisz Pw.';return;}
+  if(BK.card.cols.length>=12){$('bkMsg').textContent='Karta ma już 12 prób – dotknij „Nowa karta”.';return;}
+  const rows=bkRows(r);
+  if(!BK.card.cols.length){BK.card.st=$('bkHStation').value;BK.card.dt=$('bkHDate').value;BK.card.who=$('bkHWho').value;}
+  BK.card.cols.push(rows.map(x=>String(x[2])));
+  BK.hist.unshift({ts:Date.now(),rows});BK.hist=BK.hist.slice(0,30);bkSave();bkHist();bkOut();
+  $('bkMsg').textContent=`Zapisano jako próbę nr ${BK.card.cols.length} na karcie.`;};
+let newArm=null;
+$('bkNewCard').onclick=()=>{ if(!newArm){newArm=setTimeout(()=>{newArm=null;$('bkNewCard').textContent='Nowa karta';},4000);$('bkNewCard').textContent='Na pewno? Dotknij ponownie';return;}
+  clearTimeout(newArm);newArm=null;$('bkNewCard').textContent='Nowa karta';BK.card={cols:[],st:'',dt:'',who:''};
+  $('bkHDate').value=new Date().toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric'});bkSave();bkOut();$('bkMsg').textContent='Zaczęto nową kartę (historia prób została).';};
+$('bkFull').onclick=()=>{ $('paperFull').hidden=false; bkOut(); try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{});}catch(e){} };
+$('bkFullClose').onclick=()=>{ $('paperFull').hidden=true; try{screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock();}catch(e){} };
+['bkHStation','bkHDate','bkHWho'].forEach(id=>$(id).addEventListener('input',()=>{ if(BK.card.cols.length){BK.card[{bkHStation:'st',bkHDate:'dt',bkHWho:'who'}[id]]=$(id).value;bkSave();} bkOut(); }));
+$('bkCopy').onclick=async()=>{const t=bkRows(bkCalc()).map(([n,l,v])=>`${n}. ${l}: ${v}`).join('\n');
+  try{await navigator.clipboard.writeText(t);$('bkMsg').textContent='Skopiowano.';}catch(e){$('bkMsg').textContent='Nie udało się skopiować – zaznacz tabelę ręcznie.';}};
+$('brakeClose').onclick=()=>{$('brakeDlg').hidden=true;};
+$('brakeBtn').onclick=()=>{
+  if(!$('bkTime').value) $('bkTime').value=dtLocal(Date.now());
+  if(!$('bkHStation').value) $('bkHStation').value=BK.card.st||'';
+  if(!$('bkHWho').value) $('bkHWho').value=BK.card.who||'';
+  if(!$('bkHDate').value) $('bkHDate').value=BK.card.dt||new Date().toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric'});
+  if(!$('bkPlace').value&&cur&&POIS.length){let b=null;POIS.forEach(p=>{if(p.t!=='st')return;const d=Math.abs(p.k-cur.k);if(!b||d<b.d)b={d,p};});if(b&&b.d<2)$('bkPlace').value=b.p.name;}
+  bkRender(); openSheet('brakeDlg');
 };
 
 /* ===== Wybór linii ===== */
