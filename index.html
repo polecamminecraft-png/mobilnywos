@@ -9,16 +9,20 @@
 <meta name="apple-mobile-web-app-title" content="Mobilny WOS">
 <meta name="theme-color" content="#14181d">
 <title>Mobilny WOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 /* Kabinowy pulpit: ciemny panel na dole, mapa na całym ekranie */
 :root{
-  --bg:#14181d; --panel:#1c2229; --panel2:#252d36; --line:#334050;
-  --fg:#e9eef3; --mute:#93a1b0; --acc:#f2c230;
-  --roz:#a855f7; --v20:#e5484d; --v40:#f07b2c; --v60:#e8b923; --v90:#3e8ef7; --ok:#3fb27f;
-  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  /* paleta „Kabina” z pliku Figma Mobilny WOS – UI */
+  --bg:#0F1317; --panel:#171D23; --panel2:#212932; --line:#2E3843;
+  --fg:#EEF2F5; --mute:#8E9BA8; --acc:#F5C518; --ink:#0B0D10; --board:#FFFFFF; --map:#1B2229; --blue:#2F80ED;
+  --roz:#A855F7; --v20:#F0443A; --v40:#F28C28; --v60:#F5C518; --v90:#2F80ED; --ok:#34C38F;
+  --cond:"Barlow Condensed","Roboto Condensed","Arial Narrow",system-ui,sans-serif;
+  --mono:var(--cond);
+  --sans:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -31,34 +35,89 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-o
 #map{position:fixed;left:0;right:0;top:0;bottom:var(--cardH,260px);z-index:1;background:#20262d}
 /* górny chip z linią */
 #lineChip{position:fixed;z-index:600;top:calc(env(safe-area-inset-top,0px) + 10px);left:max(10px,env(safe-area-inset-left,0px));
-  min-height:40px;padding:6px 14px;border-radius:999px;background:rgba(28,34,41,.92);font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;gap:8px;align-items:center}
+  min-height:42px;padding:6px 10px 6px 14px;border-radius:999px;background:rgba(23,29,35,.94);border:none;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;gap:8px;align-items:center;font:500 14px var(--sans);color:var(--mute)}
+#lineChip b{font:700 18px var(--cond);color:var(--fg)}
+#lineChip .ic{width:18px;height:18px}
 #lineChip .w{color:var(--v60);font-weight:600;font-size:13px}
 .leaflet-top{top:env(safe-area-inset-top,0px)}
 .leaflet-right{right:env(safe-area-inset-right,0px)}
 .leaflet-control-layers-toggle{width:44px!important;height:44px!important}
 #followBtn{position:fixed;z-index:600;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(var(--cardH,260px) + 14px);width:54px;height:54px;border-radius:50%;
-  padding:0;font-size:24px;box-shadow:0 3px 10px rgba(0,0,0,.45);background:var(--panel)}
-#followBtn.on{background:#2a7bf6;border-color:#2a7bf6;color:#fff}
+  padding:0;display:grid;place-items:center;border:none;box-shadow:0 3px 10px rgba(0,0,0,.45);background:var(--panel)}
+#followBtn.on{background:var(--blue);color:#fff}
+#muteBtn{position:fixed;z-index:600;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(var(--cardH,260px) + 80px);width:54px;height:54px;border-radius:50%;
+  padding:0;display:grid;place-items:center;border:none;box-shadow:0 3px 10px rgba(0,0,0,.45);background:var(--panel)}
+#muteBtn.muted{background:var(--v20)}
+#poi{display:flex;gap:18px;padding:2px 18px 12px;font:500 13px var(--sans);color:var(--mute);overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+#poi span{display:inline-flex;gap:6px;align-items:center}
+#poi .ic{width:17px;height:17px}
+#poi:empty{display:none}
+#poi span b{color:var(--fg);font:700 16px var(--cond);font-variant-numeric:tabular-nums}
+#overBox{position:fixed;inset:0;z-index:450;pointer-events:none;border:10px solid var(--v20);animation:ovp .6s infinite alternate}
+@keyframes ovp{from{opacity:1}to{opacity:.25}}
+#next.over{background:rgba(240,68,58,.32)!important}
+#next.over #nEy{color:#ffb3ae}
+#next.over #nBar i{background:var(--v20)}
+.poi-st{font:700 12px var(--sans);color:#111;background:#fff;border:1px solid #333;padding:1px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.poi-sg{font:700 10px var(--mono);color:#fff;background:#1d5c2e;padding:0 3px;border-radius:3px;white-space:nowrap}
+.far2 .poi-sg{display:none}
+.tg{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.tg small{display:block;color:var(--mute);font-size:12.5px}
+.tg button{min-width:76px}
+/* tryb nocny */
+html.night{--bg:#0b0807;--panel:#140d0c;--panel2:#1f1513;--line:#3a2522;--fg:#e0a99a;--mute:#9a6a60;--acc:#c98a2c;--ok:#5f8a4a;color-scheme:dark}
+html.night .leaflet-tile-pane{filter:brightness(.42) sepia(.5) saturate(.8) hue-rotate(-20deg)}
+html.night .board,html.night .rs .c{filter:brightness(.7)}
+html.night #rozBtn{filter:brightness(.7)}
+html.night #followBtn.on{background:#5a2a20;border-color:#5a2a20}
+/* ikony */
+.ic{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.f{fill:currentColor;stroke:none}
+/* tablica prędkości (zamiast znaku drogowego) */
+.board{--sev:var(--acc);position:relative;flex:none;width:80px;height:100px;border-radius:12px;background:var(--board);border:3px solid var(--ink);display:grid;place-items:center;overflow:hidden;
+  font:800 58px/1 var(--cond);color:var(--ink);font-variant-numeric:tabular-nums;padding-bottom:8px}
+.board::after{content:"";position:absolute;left:0;right:0;bottom:0;height:10px;background:var(--sev)}
+.board.sm{width:46px;height:56px;border-radius:8px;border-width:2px;font-size:30px;padding-bottom:5px}
+.board.sm::after{height:6px}
+.board.two{font-size:20px;line-height:1.05;text-align:center}
+.board.sm.two{font-size:13px}
+.board.roz{--sev:var(--roz)}
 /* dolna karta */
-#card{position:fixed;left:0;right:0;bottom:0;z-index:500;background:var(--panel);border-top:1px solid var(--line);border-radius:18px 18px 0 0;
-  box-shadow:0 -6px 22px rgba(0,0,0,.45);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
-#next{padding:14px 16px 10px;display:flex;gap:14px;align-items:center;border-radius:18px 18px 0 0;cursor:pointer;min-height:104px}
-#next.inside{background:#3a1416}
-#next.near{background:#3a2a10}
-.sign{flex:none;width:78px;height:78px;border-radius:50%;background:#fff;border:8px solid var(--v20);display:grid;place-items:center;font:800 28px var(--mono);color:#111}
-#nextTxt{min-width:0;flex:1}
-#nextTxt .big{font-size:24px;font-weight:800;line-height:1.15}
-#nextTxt .sub{color:var(--mute);font-size:14px;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-#nextTxt .sub b{color:var(--acc)}
+#card{position:fixed;left:0;right:0;bottom:0;z-index:500;background:var(--panel);border-radius:24px 24px 0 0;
+  box-shadow:0 -6px 24px rgba(0,0,0,.5);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+#next{padding:10px 18px 12px;display:flex;flex-direction:column;gap:10px;border-radius:24px 24px 0 0;cursor:pointer}
+#next .grab{width:40px;height:4px;border-radius:2px;background:var(--line);align-self:center}
+#next .hr{display:flex;gap:16px;align-items:center}
+#nEy{font:700 12px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--acc)}
+#nBig{font:800 48px/1 var(--cond);font-variant-numeric:tabular-nums;color:var(--fg);margin:2px 0 4px}
+#nMeta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font:600 18px var(--cond);color:var(--mute)}
+#nDesc{font-size:14px;color:var(--mute);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tbadge{display:inline-flex;gap:6px;align-items:center;padding:3px 10px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);font:600 11px var(--sans);letter-spacing:.08em;color:var(--mute)}
+.tbadge b{font:700 20px/1 var(--cond);color:var(--acc);letter-spacing:0}
+.tbadge.roz{border-color:var(--roz)}
+.tbadge.roz b{color:var(--roz)}
+#nBar{height:8px;border-radius:4px;background:var(--panel2);position:relative;overflow:hidden}
+#nBar i{position:absolute;top:0;bottom:0;right:0;border-radius:4px;background:var(--acc);transition:width .4s}
+#nBarL{display:flex;justify-content:space-between;font:500 11px var(--sans);color:var(--mute);margin-top:-4px}
+#nProg[hidden]{display:none}
+#next.inside{background:rgba(240,68,58,.16)}
+#next.inside #nEy{color:#ff8a83}
+#next.near{background:rgba(245,197,24,.08)}
+
+
+
+
+
 .hud{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:1px;background:var(--line);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.hud div{background:var(--panel);padding:6px 12px;min-width:0}
-.hud small{display:block;color:var(--mute);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
-.hud b{font:700 21px/1.2 var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
-.tb{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px 12px 12px}
-.tb button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:62px;padding:6px 2px;font-size:13px;font-weight:600;border-radius:14px}
-.tb .i{font-size:22px;line-height:1}
-#gpsBtn.on{background:var(--ok);border-color:var(--ok);color:#06130c}
-#rozBtn{background:var(--roz);border-color:var(--roz);color:#fff}
+.hud div{background:var(--panel);padding:8px 10px 10px 14px;min-width:0}
+.hud small{display:block;color:var(--mute);font:600 11px var(--sans);letter-spacing:.08em;text-transform:uppercase}
+.hud b i.u{font:500 14px var(--sans);font-style:normal;color:var(--mute)}
+.hud b{font:600 26px/1.15 var(--cond);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.tb{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 14px 14px}
+.tb button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:64px;padding:6px 2px;font:600 13px var(--sans);border-radius:16px;border:none;background:var(--panel2)}
+
+#gpsBtn.on{background:var(--ok);color:var(--ink)}
+#rozBtn{background:var(--roz)!important;color:#fff}
 #rozBtn .cnt{font-size:11px;background:#fff;color:var(--roz);border-radius:999px;padding:0 6px;margin-left:2px}
 @media (orientation:landscape) and (max-height:540px){
   #card{top:0;right:auto;width:min(360px,45vw);border-radius:0;overflow:auto;padding-top:env(safe-area-inset-top,0px)}
@@ -69,17 +128,17 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-o
 }
 /* listy */
 #list{display:flex;flex-direction:column}
-.row{display:grid;grid-template-columns:56px 58px 1fr auto;gap:10px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line);cursor:pointer;min-height:68px}
+.row{display:grid;grid-template-columns:46px 1fr auto;gap:12px;align-items:center;padding:12px 14px 12px 12px;border-radius:14px;background:var(--panel2);cursor:pointer;margin-bottom:8px}
 .row:active{background:var(--panel2)}
 .row.past{opacity:.45}
-.v{width:52px;height:52px;border-radius:50%;background:#fff;border:5px solid var(--v20);display:grid;place-items:center;font:800 19px/1 var(--mono);color:#111}
-.v.two{font-size:12px;line-height:1.05;text-align:center}
-.trk{font:800 16px/1.1 var(--mono);text-align:center;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 2px;color:var(--acc);overflow:hidden}
+
+.trk{font:800 16px/1.1 var(--cond);text-align:center;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 2px;color:var(--acc);overflow:hidden}
 .trk small{display:block;font:600 9.5px var(--sans);color:var(--mute);letter-spacing:.08em}
 .rs{display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:auto}
-.rs .c{width:36px;height:36px;border-radius:50%;background:#fff;border:4px solid #e5484d;display:grid;place-items:center;font:800 14px/1 ui-monospace,Menlo,monospace;color:#111;box-shadow:0 1px 4px rgba(0,0,0,.5)}
-.rs .c.two{font-size:9.5px;text-align:center;line-height:1.05}
-.rs .tl{font:700 11px ui-monospace,Menlo,monospace;background:#14181d;color:#f2c230;padding:1px 5px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.rs .c{position:relative;width:32px;height:40px;border-radius:6px;background:#fff;border:2px solid #0B0D10;display:grid;place-items:center;font:800 20px/1 var(--cond);color:#0B0D10;box-shadow:0 1px 4px rgba(0,0,0,.5);overflow:hidden;padding-bottom:4px}
+.rs .c::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--sev,#F5C518)}
+.rs .c.two{font-size:10px;text-align:center;line-height:1.05}
+.rs .tl{font:700 12px var(--cond);background:#0F1317;color:#F5C518;padding:1px 5px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.4)}
 .far .rs .tl{display:none}
 .far .rs .c{transform:scale(.7)}
 .sh{display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:-16px;background:var(--panel);padding:4px 0 8px;z-index:2}
@@ -90,9 +149,10 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-o
 #status.warn{color:var(--v60)}
 body.nomap #map{display:none}
 .row .t{min-width:0}
-.row .t b{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.row .t b{font:600 19px var(--cond);font-variant-numeric:tabular-nums}
+.row .t .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .row .t .desc{display:block;color:var(--mute);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.row .d{font:700 14px var(--mono);text-align:right;white-space:nowrap}
+.row .d{font:700 20px var(--cond);text-align:right;white-space:nowrap}
 .tag{display:inline-block;font-size:10.5px;padding:1px 5px;border-radius:4px;margin-left:4px;vertical-align:1px;background:var(--panel2);color:var(--acc);border:1px solid var(--line)}
 .tag.roz{background:var(--roz);color:#fff;border-color:var(--roz);font-weight:700}
 .dlg{position:fixed;inset:0;z-index:1000;overscroll-behavior:contain;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center}
@@ -117,6 +177,15 @@ button.danger{border-color:var(--v20);color:#ff8a8d}
 .rozl div span{flex:1;min-width:0}
 .err{color:#ff8a8d;font-size:13.5px}
 #ocrMsg{font-size:13.5px}
+.chg-t{width:100%;border-collapse:collapse;font-size:13px}
+.chg-t th{text-align:left;color:var(--mute);font-weight:600;font-size:11.5px;padding:4px 6px;border-bottom:1px solid var(--line)}
+.chg-t td{padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top;font-variant-numeric:tabular-nums}
+.chg-t tr.last td{background:var(--panel2)}
+.chg-t td.n{font:800 16px var(--mono);color:var(--acc)}
+.lt{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:999px;background:var(--acc);color:#14181d;margin:2px 3px 0 0}
+.lt.no{background:transparent;color:var(--mute);border:1px solid var(--line);font-weight:500}
+.tw{overflow-x:auto}
+.pend{background:var(--panel2);border-left:4px solid var(--v90);border-radius:8px;padding:10px;font-size:14px;display:flex;flex-direction:column;gap:8px}
 .ocrl{display:flex;flex-direction:column;gap:10px}
 .oc{border:1px solid var(--line);border-left:4px solid var(--roz);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
 .oc.off{opacity:.5;border-left-color:var(--line)}
@@ -133,28 +202,38 @@ button.danger{border-color:var(--v20);color:#ff8a8d}
 .leaflet-popup-content a{font-weight:700}
 .me{width:20px;height:20px;border-radius:50%;background:#2a7bf6;border:3px solid #fff;box-shadow:0 0 0 6px rgba(42,123,246,.3)}
 .km-lbl{font:700 11px var(--mono);color:#14181d;background:var(--acc);padding:1px 4px;border-radius:3px;white-space:nowrap}
-@keyframes flash{50%{background:#7a1d20}}
+@keyframes flash{50%{background:rgba(240,68,58,.45)}}
 #next.alarm{animation:flash .5s 6}
 @media (prefers-reduced-motion:reduce){#next.alarm{animation:none}}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></symbol><symbol id="i-stop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></symbol><symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol><symbol id="i-rozkaz" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M10.4 12.6a2 2 0 1 1 3 3L8 21l-4 1 1-4Z"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5.5"/><path d="M4 13.5V6a2 2 0 0 1 2-2h2"/></symbol><symbol id="i-ustawienia" viewBox="0 0 24 24"><path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/></symbol><symbol id="i-glos" viewBox="0 0 24 24"><path d="M11 4.7a.7.7 0 0 0-1.2-.5L6.4 7.6A1.4 1.4 0 0 1 5.4 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.4a1.4 1.4 0 0 1 1 .4l3.4 3.4a.7.7 0 0 0 1.2-.5z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.4 18.4a9 9 0 0 0 0-12.8"/></symbol><symbol id="i-cisza" viewBox="0 0 24 24"><path d="M11 4.7a.7.7 0 0 0-1.2-.5L6.4 7.6A1.4 1.4 0 0 1 5.4 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.4a1.4 1.4 0 0 1 1 .4l3.4 3.4a.7.7 0 0 0 1.2-.5z"/><path d="M22 9l-6 6M16 9l6 6"/></symbol><symbol id="i-pozycja" viewBox="0 0 24 24"><path d="M2 12h3M19 12h3M12 2v3M12 19v3"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-stacja" viewBox="0 0 24 24"><path d="M4 21h16M6 21V9l6-5 6 5v12M10 21v-5h4v5"/></symbol><symbol id="i-przejazd" viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20"/></symbol><symbol id="i-semafor" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="14" rx="4"/><circle cx="12" cy="6" r="1.5"/><circle cx="12" cy="11" r="1.5"/><path d="M12 16v6"/></symbol><symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol></svg>
 <div id="map"></div>
 <button id="lineChip" aria-label="Zmień linię i ustawienia">Linia 202 ▾</button>
-<button id="followBtn" class="on" aria-label="Śledź moją pozycję">⌖</button>
+<button id="followBtn" class="on" aria-label="Śledź moją pozycję"><svg class="ic"><use href="#i-pozycja"/></svg></button>
+<button id="muteBtn" aria-label="Wycisz wszystkie dźwięki"><svg class="ic"><use href="#i-glos"/></svg></button>
+<div id="overBox" hidden></div>
 
 <div id="card">
-  <div id="next" role="button" aria-label="Pokaż listę ostrzeżeń"><div class="sign" id="nSign">—</div><div id="nextTxt"><div class="big">Włącz GPS</div><div class="sub">albo dotknij mapy, żeby sprawdzić dowolne miejsce</div></div></div>
+  <div id="next" role="button" aria-label="Pokaż listę ostrzeżeń">
+    <div class="grab"></div>
+    <div class="hr"><div class="board" id="nSign">—</div>
+      <div style="min-width:0;flex:1"><div id="nEy">Mobilny WOS</div><div id="nBig">Włącz GPS</div><div id="nMeta"></div></div></div>
+    <div id="nDesc">albo dotknij mapy, żeby sprawdzić dowolne miejsce</div>
+    <div id="nProg" hidden><div id="nBar"><i></i></div><div id="nBarL" style="margin-top:6px"><span>1 km</span><span>500 m</span><span>początek ograniczenia</span></div></div>
+  </div>
+  <div id="poi"></div>
   <div class="hud">
     <div><small>Kilometr</small><b id="hKm">—</b></div>
     <div><small>Prędkość</small><b id="hSp">—</b></div>
     <div><small>Tor (GPS)</small><b id="hOff">—</b></div>
   </div>
   <nav class="tb">
-    <button id="gpsBtn"><span class="i">▶</span><span class="l">Start GPS</span></button>
-    <button id="listBtn"><span class="i">☰</span><span>Lista</span></button>
-    <button id="rozBtn"><span class="i">✍</span><span>Rozkaz<span class="cnt" id="rozCnt" hidden></span></span></button>
-    <button id="setBtn"><span class="i">⚙</span><span>Ustawienia</span></button>
+    <button id="gpsBtn"><svg class="ic f"><use href="#i-play"/></svg><span>Start GPS</span></button>
+    <button id="listBtn"><svg class="ic"><use href="#i-list"/></svg><span>Lista</span></button>
+    <button id="rozBtn"><svg class="ic"><use href="#i-rozkaz"/></svg><span>Rozkaz<span class="cnt" id="rozCnt" hidden></span></span></button>
+    <button id="setBtn"><svg class="ic"><use href="#i-ustawienia"/></svg><span>Ustawienia</span></button>
   </nav>
 </div>
 
@@ -176,20 +255,30 @@ button.danger{border-color:var(--v20);color:#ff8a8d}
     </select></label>
     <label class="full">Pokazuj ostrzeżenia dla toru<select id="torSel"><option value="all">Wszystkie tory</option></select></label>
   </div>
-  <div class="acts"><button id="sndBtn" class="on" aria-pressed="true">🔔 Alarm dźwiękowy: włączony</button></div>
+  <div>
+    <div class="tg"><div>Sygnał dźwiękowy<small>Pikanie przed ograniczeniem i przy przekroczeniu</small></div><button id="sndBtn" data-k="beep">wł.</button></div>
+    <div class="tg"><div>Komunikaty głosowe<small>„Za 800 metrów ograniczenie 40, tor 1”</small></div><button id="voiceBtn" data-k="voice">wł.</button></div>
+    <div class="tg"><div>Wibracje</div><button id="vibBtn" data-k="vib">wł.</button></div>
+    <div class="tg"><div>Ostrzeżenie o przekroczeniu<small>Gdy prędkość GPS przekracza ograniczenie o więcej niż <span id="tolTxt">3</span> km/h</small></div><button id="overBtn" data-k="over">wł.</button></div>
+    <div class="tg"><div>Obiekty na trasie<small>Stacje, przejazdy i semafory z OpenStreetMap</small></div><button id="poiBtn" data-k="poi">wł.</button></div>
+    <div class="tg"><div>Tryb nocny<small>Przyciemniona, czerwonawa kolorystyka</small></div><button id="nightBtn" data-k="night">wył.</button></div>
+  </div>
   <div class="acts"><button id="wosBtn">📄 Nowy wykaz z PDF</button><button id="geoBtn">↻ Pobierz tory od nowa</button></div>
   <p id="status">Ładowanie geometrii linii…</p>
 </div></div>
 
 <div class="dlg" id="wosDlg" hidden><div>
-  <h2>Wykaz ostrzeżeń stałych</h2>
+  <div class="sh"><h2>Wykaz ostrzeżeń stałych</h2><button id="wosClose2">Zamknij</button></div>
   <p id="wosInfo"></p>
-  <p>Pobierz nową poprawkę Dodatku 2 (PDF) z portalu i wybierz ją tutaj. Aplikacja odczyta tabelę dla linii 202 i pokaże, co się zmieniło. Plik zostaje na telefonie.</p>
+  <div id="wosPend"></div>
+  <p>Gdy w portalu pojawi się nowa poprawka, pobierz cały Dodatek 2 (PDF) i wybierz go tutaj. Aplikacja odczyta wykaz zmian ze strony 65, ostrzeżenia dla linii 202 i 250 i pokaże różnice. Plik zostaje na telefonie.</p>
   <input type="file" id="wosFile" accept="application/pdf,.pdf" hidden>
   <div class="acts"><button class="pri" id="wosPick">Wybierz plik PDF</button><button id="wosReset">Przywróć wbudowany</button><button id="wosClose">Zamknij</button></div>
   <div id="wosMsg"></div>
   <div class="diff" id="wosDiff"></div>
-  <div class="acts" id="wosApplyBar" hidden><button class="pri" id="wosApply">Zastosuj nowy wykaz</button><button id="wosCancel">Anuluj</button></div>
+  <div class="acts" id="wosApplyBar" hidden><button class="pri" id="wosApply">Zastosuj teraz</button><button id="wosLater" hidden></button><button id="wosCancel">Anuluj</button></div>
+  <h2 style="font-size:16px;margin-top:6px">Wykaz zmian (poprawki)</h2>
+  <div class="tw" id="wosChanges"></div>
 </div></div>
 
 <div class="dlg" id="rozDlg" hidden><div>
@@ -220,7 +309,7 @@ button.danger{border-color:var(--v20);color:#ff8a8d}
 <script>
 /* ===== Wykaz ostrzeżeń stałych – wbudowany: Dodatek 2 IZ Gdynia popr. 7 (linia 202, kilometraż linii 202) =====
    odd = prędkość w kierunku nieparzystym (rosnący km), even = parzystym (malejący km); null = brak ograniczenia w tym kierunku */
-const BUILTIN = {"name":"Dodatek 2 IZ Gdynia, popr. 7","lines":{"202":[{"f":2.75,"t":2.774,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":3.347,"t":3.367,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":3.913,"t":3.933,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":7.066,"t":7.09,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":8.278,"t":8.296,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":8.667,"t":8.685,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":10.918,"t":10.936,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":11.738,"t":11.756,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":20.836,"t":21.408,"tor":"8","odd":100,"even":null,"why":"Prędkość drogowa (Vd)","st":"Gdańsk Osowa Gdynia Wielki Kack","vd":1},{"f":20.961,"t":21.37,"tor":"5","odd":100,"even":null,"why":"Prędkość drogowa (Vd)","st":"Gdynia Główna","vd":1},{"f":20.98,"t":21.547,"tor":"8","odd":null,"even":100,"why":"Prędkość drogowa (Vd)","st":"Gdynia Główna","vd":1},{"f":21.043,"t":21.528,"tor":"5","odd":null,"even":100,"why":"Prędkość drogowa (Vd)","st":"Gdynia Główna","vd":1},{"f":81,"t":81.1,"tor":"1","odd":40,"even":40,"why":"Nowo ułożony rozjazd Ograniczenie prędkości jazdy po rozjeździe na kierunek zwrotny","st":"Lębork – Pogorzelice","star":1},{"f":81,"t":81.05,"tor":"2","odd":40,"even":40,"why":"Nowo ułożony rozjazd","st":"Lębork – Pogorzelice","star":1},{"f":87.74,"t":87.79,"tor":"4","odd":50,"even":50,"why":"Budowa przejścia pod torami","st":"Pogorzelice","star":1,"nowe":1},{"f":88.35,"t":88.4,"tor":"2","odd":50,"even":50,"why":"Przebudowa przepustu","st":"Pogorzelice","star":1,"nowe":1},{"f":88.6,"t":88.65,"tor":"2","odd":50,"even":50,"why":"Przebudowa przepustu","st":"Pogorzelice – Potęgowo","star":1,"nowe":1},{"f":95.523,"t":95.573,"tor":"1","odd":50,"even":50,"why":"Przebudowa wiaduktu","st":"Pogorzelice – Potęgowo","star":1,"nowe":1},{"f":96.665,"t":96.715,"tor":"1","odd":50,"even":50,"why":"Przebudowa wiaduktu","st":"Potęgowo","star":1,"nowe":1},{"f":98.7,"t":98.925,"tor":"1","odd":40,"even":40,"why":"Układ geometryczny toru","st":"Potęgowo","star":1,"nowe":1},{"f":100.4,"t":100.45,"tor":"1","odd":50,"even":50,"why":"Nierówność toru w planie i profilu","st":"Potęgowo","star":1,"nowe":1},{"f":101.43,"t":101.515,"tor":"1","odd":40,"even":40,"why":"Nowo ułożony rozjazd Ograniczenie prędkości jazdy po rozjeździe na kierunek zwrotny","st":"Potęgowo – Damnica","star":1,"nowe":1},{"f":102.57,"t":102.62,"tor":"1","odd":50,"even":50,"why":"Przebudowa wiaduktu","st":"Potęgowo – Damnica","star":1,"nowe":1},{"f":105.93,"t":105.98,"tor":"1","odd":50,"even":50,"why":"Budowa przejścia pod torami","st":"Potęgowo – Damnica","star":1,"nowe":1},{"f":110.67,"t":110.72,"tor":"1","odd":50,"even":50,"why":"Przebudowa przepustu","st":"Damnica","star":1,"nowe":1},{"f":111.53,"t":111.61,"tor":"2","odd":40,"even":40,"why":"Nowo ułożony rozjazd","st":"Damnica","star":1,"nowe":1},{"f":112.6,"t":112.875,"tor":"2","odd":40,"even":40,"why":"Układ geometryczny toru","st":"Damnica","star":1},{"f":121.98,"t":122.2,"tor":"1","odd":50,"even":50,"why":"Układ geometryczny toru Budowa wiaduktu","st":"Jezierzyce Słupskie","star":1},{"f":121.98,"t":122.2,"tor":"2","odd":50,"even":50,"why":"Układ geometryczny toru Budowa wiaduktu","st":"Jezierzyce Słupskie","star":1,"nowe":1},{"f":121.98,"t":122.2,"tor":"3","odd":50,"even":50,"why":"Układ geometryczny toru","st":"Jezierzyce Słupskie","star":1},{"f":128.09,"t":128.14,"tor":"1","odd":50,"even":50,"why":"Budowa wiaduktu; Nierówność toru w planie i profilu","st":"Jezierzyce Słupskie – Słupsk","star":1,"nowe":1},{"f":129.05,"t":129.375,"tor":"1","odd":30,"even":30,"why":"Tymczasowa/prowizoryczna konstrukcja","st":"Jezierzyce Słupskie – Słupsk","star":1},{"f":129.375,"t":130.2,"tor":"1","odd":50,"even":50,"why":"Przełączenie sterowania urządzeń srk","st":"Jezierzyce Słupskie – Słupsk","star":1},{"f":130.612,"t":130.97,"tor":"9a, 9","odd":20,"even":null,"why":"Wjazd na tor zakończony kozłem oporowym","st":"Jezierzyce Słupskie – Słupsk","star":1,"nowe":1},{"f":131.169,"t":131.172,"tor":"1","odd":20,"even":20,"why":"Brak widoczności czoła pociągu na przejeździe","st":"Słupsk","star":1},{"f":131.169,"t":131.172,"tor":"3, 5, 7","odd":20,"even":20,"why":"Brak widoczności czoła pociągu na przejeździe","st":"Słupsk","star":1}],"250":[{"f":0.08,"t":20.992,"tor":"501","odd":null,"even":null,"why":"Dla ED250 max pobór mocy prądu trakcji 1000A","st":"Gdańsk Główny Gdynia Główna","star":1},{"f":0.08,"t":20.992,"tor":"502","odd":null,"even":null,"why":"Dla ED250 max pobór mocy prądu trakcji 1000A","st":"Gdańsk Główny Gdynia Główna","star":1},{"f":5.553,"t":5.556,"tor":"501","odd":20,"even":20,"why":"Brak widoczności czoła pociągu na przejściu dla pieszych.","st":"Gdańsk Wrzeszcz – Gdańsk Oliwa"},{"f":11.52,"t":11.685,"tor":"501","odd":50,"even":50,"why":"Układ geometryczny toru","st":"Sopot"},{"f":15.85,"t":15.95,"tor":"501","odd":20,"even":20,"why":"Nieodpowiednia geometria toru dla ED250","st":"Gdynia Orłowo – Gdynia Główna","star":1},{"f":27.4,"t":27.9,"tor":"112, 163","odd":20,"even":20,"why":"Układ geometryczny torów","st":"Gdynia Cisowa","star":1},{"f":28.643,"t":28.657,"tor":"502","odd":50,"even":50,"why":"Ograniczona widoczność czoła pociągu na przejeździe","st":"Gdynia Chylonia – Rumia","star":1}]},"notes":{"202":"Na obiektach inżynieryjnych od km 2,750 do 2,774; od km 3,347 do 3,367; od km 3,913 do 3,933; od km 7,066 do 7,090; od km 8,278 do 8,296; od km8,667 do 8,685; od km 10,918 do 10,936; od km 11,738 do 11,756; dla klasy obciążenia D4 obowiązuje ograniczenie prędkości do 30 km/h.","250":"Maksymalna prędkość dla pociągów pasażerskich awaryjnie kierowanych na tory 501 i 502 linii 250 na odcinku Gdansk Główny - Rumia wynosi 70 km/h"},"valid":{"from":"30 sierpień 2026 r.","to":"12 grudzień 2026"}};
+const BUILTIN = {"name":"Dodatek 2 IZ Gdynia, popr. 7","lines":{"202":[{"f":2.75,"t":2.774,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":3.347,"t":3.367,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":3.913,"t":3.933,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":7.066,"t":7.09,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":8.278,"t":8.296,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":8.667,"t":8.685,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":10.918,"t":10.936,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":11.738,"t":11.756,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":20.836,"t":21.408,"tor":"8","odd":100,"even":null,"why":"Prędkość drogowa (Vd)","st":"Gdańsk Osowa Gdynia Wielki Kack","vd":1},{"f":20.961,"t":21.37,"tor":"5","odd":100,"even":null,"why":"Prędkość drogowa (Vd)","st":"Gdynia Główna","vd":1},{"f":20.98,"t":21.547,"tor":"8","odd":null,"even":100,"why":"Prędkość drogowa (Vd)","st":"Gdynia Główna","vd":1},{"f":21.043,"t":21.528,"tor":"5","odd":null,"even":100,"why":"Prędkość drogowa (Vd)","st":"Gdynia Główna","vd":1},{"f":81,"t":81.1,"tor":"1","odd":40,"even":40,"why":"Nowo ułożony rozjazd Ograniczenie prędkości jazdy po rozjeździe na kierunek zwrotny","st":"Lębork – Pogorzelice","star":1},{"f":81,"t":81.05,"tor":"2","odd":40,"even":40,"why":"Nowo ułożony rozjazd","st":"Lębork – Pogorzelice","star":1},{"f":87.74,"t":87.79,"tor":"4","odd":50,"even":50,"why":"Budowa przejścia pod torami","st":"Pogorzelice","star":1,"nowe":1},{"f":88.35,"t":88.4,"tor":"2","odd":50,"even":50,"why":"Przebudowa przepustu","st":"Pogorzelice","star":1,"nowe":1},{"f":88.6,"t":88.65,"tor":"2","odd":50,"even":50,"why":"Przebudowa przepustu","st":"Pogorzelice – Potęgowo","star":1,"nowe":1},{"f":95.523,"t":95.573,"tor":"1","odd":50,"even":50,"why":"Przebudowa wiaduktu","st":"Pogorzelice – Potęgowo","star":1,"nowe":1},{"f":96.665,"t":96.715,"tor":"1","odd":50,"even":50,"why":"Przebudowa wiaduktu","st":"Potęgowo","star":1,"nowe":1},{"f":98.7,"t":98.925,"tor":"1","odd":40,"even":40,"why":"Układ geometryczny toru","st":"Potęgowo","star":1,"nowe":1},{"f":100.4,"t":100.45,"tor":"1","odd":50,"even":50,"why":"Nierówność toru w planie i profilu","st":"Potęgowo","star":1,"nowe":1},{"f":101.43,"t":101.515,"tor":"1","odd":40,"even":40,"why":"Nowo ułożony rozjazd Ograniczenie prędkości jazdy po rozjeździe na kierunek zwrotny","st":"Potęgowo – Damnica","star":1,"nowe":1},{"f":102.57,"t":102.62,"tor":"1","odd":50,"even":50,"why":"Przebudowa wiaduktu","st":"Potęgowo – Damnica","star":1,"nowe":1},{"f":105.93,"t":105.98,"tor":"1","odd":50,"even":50,"why":"Budowa przejścia pod torami","st":"Potęgowo – Damnica","star":1,"nowe":1},{"f":110.67,"t":110.72,"tor":"1","odd":50,"even":50,"why":"Przebudowa przepustu","st":"Damnica","star":1,"nowe":1},{"f":111.53,"t":111.61,"tor":"2","odd":40,"even":40,"why":"Nowo ułożony rozjazd","st":"Damnica","star":1,"nowe":1},{"f":112.6,"t":112.875,"tor":"2","odd":40,"even":40,"why":"Układ geometryczny toru","st":"Damnica","star":1},{"f":121.98,"t":122.2,"tor":"1","odd":50,"even":50,"why":"Układ geometryczny toru Budowa wiaduktu","st":"Jezierzyce Słupskie","star":1},{"f":121.98,"t":122.2,"tor":"2","odd":50,"even":50,"why":"Układ geometryczny toru Budowa wiaduktu","st":"Jezierzyce Słupskie","star":1,"nowe":1},{"f":121.98,"t":122.2,"tor":"3","odd":50,"even":50,"why":"Układ geometryczny toru","st":"Jezierzyce Słupskie","star":1},{"f":128.09,"t":128.14,"tor":"1","odd":50,"even":50,"why":"Budowa wiaduktu; Nierówność toru w planie i profilu","st":"Jezierzyce Słupskie – Słupsk","star":1,"nowe":1},{"f":129.05,"t":129.375,"tor":"1","odd":30,"even":30,"why":"Tymczasowa/prowizoryczna konstrukcja","st":"Jezierzyce Słupskie – Słupsk","star":1},{"f":129.375,"t":130.2,"tor":"1","odd":50,"even":50,"why":"Przełączenie sterowania urządzeń srk","st":"Jezierzyce Słupskie – Słupsk","star":1},{"f":130.612,"t":130.97,"tor":"9a, 9","odd":20,"even":null,"why":"Wjazd na tor zakończony kozłem oporowym","st":"Jezierzyce Słupskie – Słupsk","star":1,"nowe":1},{"f":131.169,"t":131.172,"tor":"1","odd":20,"even":20,"why":"Brak widoczności czoła pociągu na przejeździe","st":"Słupsk","star":1},{"f":131.169,"t":131.172,"tor":"3, 5, 7","odd":20,"even":20,"why":"Brak widoczności czoła pociągu na przejeździe","st":"Słupsk","star":1}],"250":[{"f":0.08,"t":20.992,"tor":"501","odd":null,"even":null,"why":"Dla ED250 max pobór mocy prądu trakcji 1000A","st":"Gdańsk Główny Gdynia Główna","star":1},{"f":0.08,"t":20.992,"tor":"502","odd":null,"even":null,"why":"Dla ED250 max pobór mocy prądu trakcji 1000A","st":"Gdańsk Główny Gdynia Główna","star":1},{"f":5.553,"t":5.556,"tor":"501","odd":20,"even":20,"why":"Brak widoczności czoła pociągu na przejściu dla pieszych.","st":"Gdańsk Wrzeszcz – Gdańsk Oliwa"},{"f":11.52,"t":11.685,"tor":"501","odd":50,"even":50,"why":"Układ geometryczny toru","st":"Sopot"},{"f":15.85,"t":15.95,"tor":"501","odd":20,"even":20,"why":"Nieodpowiednia geometria toru dla ED250","st":"Gdynia Orłowo – Gdynia Główna","star":1},{"f":27.4,"t":27.9,"tor":"112, 163","odd":20,"even":20,"why":"Układ geometryczny torów","st":"Gdynia Cisowa","star":1},{"f":28.643,"t":28.657,"tor":"502","odd":50,"even":50,"why":"Ograniczona widoczność czoła pociągu na przejeździe","st":"Gdynia Chylonia – Rumia","star":1}]},"notes":{"202":"Na obiektach inżynieryjnych od km 2,750 do 2,774; od km 3,347 do 3,367; od km 3,913 do 3,933; od km 7,066 do 7,090; od km 8,278 do 8,296; od km8,667 do 8,685; od km 10,918 do 10,936; od km 11,738 do 11,756; dla klasy obciążenia D4 obowiązuje ograniczenie prędkości do 30 km/h.","250":"Maksymalna prędkość dla pociągów pasażerskich awaryjnie kierowanych na tory 501 i 502 linii 250 na odcinku Gdansk Główny - Rumia wynosi 70 km/h"},"changes":[{"nr":1,"pismo":"IZ11EI.611.22.2026.BS","zDnia":"27.08.2026","od":"30.08.2026","wDniu":"27.08.2026","strony":[9,11,20,23,24,33,44]},{"nr":2,"pismo":"IZ11EI.611.54.2026.8","zDnia":"04.09.2026","od":"07.09.2026","wDniu":"04.09.2026","strony":[16,19,20,21,51,53,54]},{"nr":3,"pismo":"IZ11EI.611.56.2026.8","zDnia":"11.09.2026","od":"14.09.2026","wDniu":"11.09.2026","strony":[19,33]},{"nr":4,"pismo":"IZ11EI.611.58.2026.8","zDnia":"25.09.2026","od":"28.09.2026","wDniu":"25.09.2026","strony":[20]},{"nr":5,"pismo":"IZ11EI.611.61.2026.8","zDnia":"02.10.2026","od":"05.10.2026","wDniu":"02.10.2026","strony":[19,27]},{"nr":6,"pismo":"IZ11EI.611.65.2026.8","zDnia":"05.10.2026","od":"07.10.2026","wDniu":"05.10.2026","strony":[11,12,13]},{"nr":7,"pismo":"IZ11EI.611.68.2026.8","zDnia":"09.10.2026","od":"12.10.2026","wDniu":"09.10.2026","strony":[48]}],"linePages":{"202":[19,20,21],"250":[47]},"valid":{"from":"30 sierpień 2026 r.","to":"12 grudzień 2026"}};
 /* Linie do wyboru: przybliżone położenie stacji (km, lat, lon) – zapas, gdy brak danych OSM */
 const LINES={
  '202':{name:'202 Gdańsk Gł. – Słupsk',odd:'Gdańsk→Słupsk',even:'Słupsk→Gdańsk',kmMin:-1.5,kmMax:146,step:5,box:'54.25,16.7,54.7,18.8',anch:[
@@ -355,6 +444,32 @@ function parseWos(pages, LINE){
 }
 
 
+/* Wykaz zmian (ostatnia strona Dodatku 2) + strony, na których są poszczególne linie */
+function parseChanges(pages){
+  const out=[], linePages={}, hdr=[];
+  const DT=/^\d{2}\.\d{2}\.\d{4}$/;
+  pages.forEach((pg,pi)=>{
+    const its=pg.items.filter(t=>t.s.trim()).map(t=>({...t,s:t.s.trim()}));
+    const pnum=(its.find(t=>t.y<25&&/^\d{1,3}$/.test(t.s))||{}).s; const printed=pnum?+pnum:pi+1;
+    its.slice().sort((p,q)=>q.y-p.y).forEach(t=>{const m=t.s.match(/Linia nr\s*(\d+)/); if(m&&!(m[1] in linePages)){linePages[m[1]]=printed;hdr.push([m[1],printed]);}});
+    if(!its.some(t=>/WYKAZ ZMIAN/.test(t.s))) return;
+    its.filter(t=>/^IZ[\w.]+$/i.test(t.s)).forEach(a=>{
+      const row=its.filter(t=>Math.abs(t.y-a.y)<3);
+      const nrI=row.filter(t=>/^\d{1,3}$/.test(t.s)&&t.x<a.x).sort((p,q)=>q.x-p.x)[0];
+      const dts=row.filter(t=>DT.test(t.s)).sort((p,q)=>p.x-q.x);
+      if(!nrI||dts.length<2) return;
+      const x0=dts[0].x+dts[0].w+2, x1=dts[1].x-2;
+      const st=its.filter(t=>t.x>=x0-5&&t.x+t.w<=x1+5&&Math.abs(t.y-a.y)<14&&/^[\d,\s\-–]+$/.test(t.s)).sort((p,q)=>q.y-p.y||p.x-q.x).map(t=>t.s).join(' ');
+      const strony=[...st.matchAll(/\d+/g)].map(m=>+m[0]);
+      out.push({nr:+nrI.s,pismo:a.s,zDnia:dts[0].s,od:dts[1].s,wDniu:dts[2]?dts[2].s:'',strony});
+    });
+  });
+  // strony linii: od nagłówka do następnego nagłówka
+  const lp={}; hdr.forEach(([l,p0],i)=>{const p1=i+1<hdr.length?hdr[i+1][1]:p0;const a=[];for(let x=p0;x<=p1;x++)a.push(x);lp[l]=a;});
+  const seen=new Set(); return {changes:out.filter(c=>!seen.has(c.nr)&&seen.add(c.nr)).sort((a,b)=>a.nr-b.nr), linePages:lp};
+}
+
+
 /* Prędkości drogowe na torach innych linii w stacjach węzłowych (kilometraż innej linii – pokazane przy stacji) */
 const VD = {
  'Gdynia Główna':['Tor 1, linia 201 km 204,700–204,851: parzysty 60 km/h'],
@@ -478,7 +593,7 @@ const gUrl=(lat,lon)=>`https://www.google.com/maps/search/?api=1&query=${lat.toF
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmtDT=ts=>new Date(ts).toLocaleString('pl-PL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 let geoMsg=null;
-function showSrc(){ if(!geoMsg) return; setStatus(`${geoMsg} Linia ${LINE} · wykaz: ${WOS.name}${WOS.valid?' – ważny do '+WOS.valid.to:''}${R.some(r=>r.roz)?` · rozkazy: ${R.filter(r=>r.roz).length}`:''}`); }
+function showSrc(){ if(!geoMsg) return; setStatus(`${geoMsg} Linia ${LINE} · Dodatek 2 ${wosName(WOS)}${WOS.valid?' – ważny do '+WOS.valid.to:''}${R.some(r=>r.roz)?` · rozkazy: ${R.filter(r=>r.roz).length}`:''}`); }
 const spd=r=>`${r.odd??'–'} / ${r.even??'–'}`;
 
 function popupHtml(r){
@@ -511,7 +626,7 @@ function drawAll(){
     const startLL=tp.length?tp[0][0]:kmToLL(r.f);
     const same=r.odd===r.even, sv=same?r.odd:`↑${r.odd??'–'}<br>↓${r.even??'–'}`;
     const ic=L.divIcon({className:'',iconSize:[60,60],iconAnchor:[30,22],
-      html:`<div class="rs"><div class="c${same?'':' two'}" style="border-color:${c}">${sv}</div><div class="tl">${r.roz?'ROZKAZ · ':''}${r.d4?'D4':'tor '+r.tor}</div></div>`});
+      html:`<div class="rs"><div class="c${same?'':' two'}" style="--sev:${c}">${sv}</div><div class="tl">${r.roz?'ROZKAZ · ':''}${r.d4?'D4':'tor '+r.tor}</div></div>`});
     L.marker(startLL,{icon:ic,zIndexOffset:500-(v===999?0:v)}).bindPopup(()=>popupHtml(r)).addTo(rLayer);
   });
   if(LINE==='202') ANCHf().forEach(a=>{
@@ -523,20 +638,29 @@ function drawAll(){
 }
 
 /* ===== Pobranie geometrii z OpenStreetMap (słupki kilometrowe linii 202) ===== */
-const geoKey=()=>`geo-${LINE}-v2`;
+const geoKey=()=>`geo-${LINE}-v3`;
 const Qf=()=>`[out:json][timeout:120];
 relation["type"="route"]["route"="railway"]["ref"="${LINE}"](${LINES[LINE].box})->.r;
 way(r.r)->.w;
 way(around.w:40)["railway"="rail"]["railway:track_ref"]->.t;
 node(w.w)["railway"="milestone"]->.m;
-.m out body;
+node(around.w:25)["railway"~"^(level_crossing|crossing|signal)$"]->.x;
+node(around.w:150)["railway"~"^(station|halt)$"]->.s;
+(.m;.x;.s;);
+out body;
 (.w;.t;);
 out tags geom;`;
 const EPS=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
 
 function parseOsm(j){
-  const ms=[],ways=[];
+  const ms=[],ways=[],pois=[];
   for(const e of j.elements){
+    if(e.type==='node'&&e.tags&&e.tags.railway&&e.tags.railway!=='milestone'){
+      const r=e.tags.railway, t=r==='level_crossing'?'lc':r==='crossing'?'cr':r==='signal'?'sig':'st';
+      if(t==='sig'&&!e.tags['railway:signal:main']&&!e.tags['railway:signal:combined']&&!e.tags['railway:signal:distant']&&!e.tags.ref) continue;
+      pois.push({t,lat:+e.lat.toFixed(6),lon:+e.lon.toFixed(6),name:e.tags.name||'',ref:e.tags.ref||e.tags['railway:ref']||''});
+      continue;
+    }
     if(e.type==='node'&&e.tags){
       let s=e.tags['railway:position:exact']||e.tags['railway:position']||'';
       s=String(s).replace(',', '.').replace(/[^\d.\-]/g,'');
@@ -549,14 +673,15 @@ function parseOsm(j){
       ways.push({g,ref:tg['railway:track_ref']||null,b});
     }
   }
-  return {ms,ways};
+  return {ms,ways,pois};
 }
 function setStatus(t,w){const s=document.getElementById('status');s.textContent=t;s.className=w?'warn':'';updChip(w);}
-function updChip(w){const c=document.getElementById('lineChip');if(c)c.innerHTML=`Linia ${LINE} ▾${w?' <span class="w">⚠ km przybliżone</span>':''}`;}
+function updChip(w){if(w!=null)updChip.w=w;const c=document.getElementById('lineChip');if(!c)return;let ex='';try{const to=WOS.valid&&parsePlDate(WOS.valid.to);if(to&&to-Date.now()<14*864e5)ex=' <span class="w">⚠ wykaz traci ważność</span>';}catch(e){}
+  c.innerHTML=`<b>Linia ${LINE}</b> · ${esc(wosName(WOS))} <svg class="ic"><use href="#i-chevron"/></svg>${updChip.w?' <span class="w">⚠ km przybliżone</span>':''}${ex}`;}
 
 let geoTok=0;
 async function loadGeo(force){
-  const tok=++geoTok, ln=LINE; WAYS=[]; geoMsg=null;
+  const tok=++geoTok, ln=LINE; WAYS=[]; geoMsg=null; POIS=[]; if(typeof drawPois==='function'&&poiLayer) drawPois();
   if(!force){try{const c=JSON.parse(localStorage.getItem(geoKey())||'null');if(c&&c.ms.length>15){applyGeo(c,'pamięć urządzenia');return;}}catch(e){}}
   setPts(ANCHf().map(a=>({k:a[0],lat:a[1],lon:a[2]})),'approx'); drawAll(); renderList();
   for(const ep of EPS){
@@ -577,13 +702,16 @@ async function loadGeo(force){
   setStatus('⚠ Brak danych OSM – tryb PRZYBLIŻONY (km z dokładnością ok. ±0,5–1 km). Połącz z internetem i odśwież.',true);
 }
 function applyGeo(d,src){
-  WAYS=d.ways; setPts(d.ms,'osm'); drawAll(); renderList();
+  WAYS=d.ways; setPts(d.ms,'osm'); drawAll(); renderList(); setPois(d.pois);
   geoMsg=`Geometria: ${d.ms.length} słupków km (${src}).`; showSrc();
 }
 
 /* ===== Stan jazdy ===== */
 let cur=null;          // {k, off, lat, lon, speed, acc}
-let autoDir=0, refKm=null, alerted=new Set(), follow=true, sound=true, watchId=null, wake=null;
+let autoDir=0, refKm=null, alerted=new Set(), follow=true, watchId=null, wake=null;
+const OPT={beep:true,voice:true,vib:true,over:true,poi:true,night:false,tol:3}; let muted=false;
+try{Object.assign(OPT,JSON.parse(localStorage.getItem('opts')||'{}'));}catch(e){}
+function saveOpt(){saveLS('opts',OPT);}
 const dirSel=document.getElementById('dirSel'), torSel=document.getElementById('torSel');
 
 function dir(){return dirSel.value==='auto'?autoDir:+dirSel.value;}
@@ -621,37 +749,41 @@ function renderList(){
     const dTxt=x.m==null?'':x.m===0?'TU':(x.m<1?Math.round(x.m*1000)+' m':x.m.toFixed(1).replace('.',',')+' km');
     const same=r.odd===r.even||x.m!=null, vv=x.m!=null?x.v:r.odd;
     const sv=same?(vv??'–'):`↑${r.odd??'–'}<br>↓${r.even??'–'}`;
-    div.innerHTML=`<div class="v${same?'':' two'}" style="border-color:${colR(r,x.v===999?null:x.v)}">${sv}</div>
-      <div class="trk"><small>TOR</small>${r.tor==='wsz.'?'1, 2':esc(r.tor)}</div>
-      <div class="t"><b>km ${fmtKm(r.f)}–${fmtKm(r.t)}</b>${r.roz?'<span class="tag roz">ROZKAZ</span>':''}${r.vd?'<span class="tag">Vd</span>':''}${r.nowe?'<span class="tag">Nowe</span>':''}${r.d4?'<span class="tag">D4</span>':''}
+    div.innerHTML=`<div class="board sm${same?'':' two'}${r.roz?' roz':''}" style="--sev:${colR(r,x.v===999?null:x.v)}">${sv}</div>
+      <div class="t"><div class="top"><b>km ${fmtKm(r.f)}–${fmtKm(r.t)}</b>${torB(r)}</div>${r.roz?'<span class="tag roz">ROZKAZ</span>':''}${r.vd?'<span class="tag">Vd</span>':''}${r.nowe?'<span class="tag">Nowe</span>':''}${r.d4?'<span class="tag">D4</span>':''}
       <span class="desc">${esc([r.st,r.why].filter(Boolean).join(' · '))}</span></div><div class="d">${dTxt}</div>`;
     div.onclick=()=>{if(!HASMAP)return;$$('listDlg').hidden=true;follow=false;setFollow();const a=kmToLL(r.f),b=kmToLL(r.t);map.fitBounds([a,b],{maxZoom:16,padding:[40,40]});L.popup().setLatLng(kmToLL((r.f+r.t)/2)).setContent(popupHtml(r)).openOn(map);};
     L_.appendChild(div);
   });
 }
 
+function hero(o){
+  const sign=document.getElementById('nSign');
+  sign.textContent=o.sign; sign.className='board'+(o.roz?' roz':''); sign.style.setProperty('--sev',o.sev||getVar('--acc'));
+  document.getElementById('nEy').textContent=o.ey||''; document.getElementById('nBig').textContent=o.big||'';
+  document.getElementById('nMeta').innerHTML=o.meta||''; document.getElementById('nDesc').textContent=o.desc||'';
+  const pr=document.getElementById('nProg'); pr.hidden=o.prog==null; if(o.prog!=null) pr.querySelector('i').style.width=Math.round(Math.max(0,Math.min(1,o.prog))*100)+'%';
+}
+const torB=r=>`<span class="tbadge${r.roz?' roz':''}">${r.roz?'ROZKAZ · ':''}TOR <b>${esc(r.tor==='wsz.'?'wsz.':r.tor)}</b></span>`;
 function renderNext(){
-  const box=document.getElementById('next'),sign=document.getElementById('nSign'),tx=document.getElementById('nextTxt');
-  box.classList.remove('inside','near');
+  const box=document.getElementById('next');
+  box.classList.remove('inside','near','over'); document.getElementById('overBox').hidden=true;
   if(!cur){return;}
   if(cur.off>(mode==='osm'?300:3000)){
-    sign.textContent='?';sign.style.borderColor='#888';
-    tx.innerHTML=`<div class="big">Poza linią ${LINE}</div><div class="sub">${Math.round(cur.off)} m od toru</div>`;return;
+    hero({sign:'?',sev:'#888',ey:'Poza linią',big:`Linia ${LINE}`,desc:`${Math.round(cur.off)} m od toru – zmień linię w Ustawieniach`});return;
   }
   const up=ahead();
   const inside=up.filter(x=>x.m===0);
   if(inside.length){
-    const x=inside.reduce((a,b)=>a.v<=b.v?a:b);
-    box.classList.add('inside');sign.textContent=x.v;sign.style.borderColor=colR(x.r,x.v);
-    tx.innerHTML=`<div class="big">TERAZ ${x.v} km/h</div><div class="sub">do km <b>${fmtKm(x.dd>0?x.r.t:x.r.f)}</b> (${fmtDist(Math.abs((x.dd>0?x.r.t:x.r.f)-cur.k))}) · tor <b>${esc(x.r.tor)}</b>${x.r.roz?' · ROZKAZ':''} · ${esc(x.r.why||'')}</div>`;
+    const x=inside.reduce((a,b)=>a.v<=b.v?a:b), end=x.dd>0?x.r.t:x.r.f;
+    box.classList.add('inside');
+    hero({sign:x.v,sev:colR(x.r,x.v),roz:x.r.roz,ey:`W ograniczeniu – jeszcze ${fmtDist(Math.abs(end-cur.k))}`,big:`${x.v} km/h`,meta:`${torB(x.r)}<span>do km ${fmtKm(end)}</span>`,desc:[x.r.st,x.r.why].filter(Boolean).join(' · ')});
   } else if(up.length){
     const x=up[0];
     if(x.m<1.5) box.classList.add('near');
-    sign.textContent=x.v;sign.style.borderColor=colR(x.r,x.v);
-    tx.innerHTML=`<div class="big">${x.v} km/h za ${fmtDist(x.m)}</div><div class="sub">km <b>${fmtKm(x.r.f)}–${fmtKm(x.r.t)}</b> · tor <b>${esc(x.r.tor)}</b>${x.r.roz?' · ROZKAZ':''} · ${esc(x.r.why||'')}</div>`;
+    hero({sign:x.v,sev:colR(x.r,x.v),roz:x.r.roz,ey:`Ograniczenie ${x.v} km/h za`,big:fmtDist(x.m),meta:`${torB(x.r)}<span>km ${fmtKm(x.r.f)}–${fmtKm(x.r.t)}</span>`,desc:[x.r.st,x.r.why].filter(Boolean).join(' · '),prog:x.m<=1?1-x.m:null});
   } else {
-    sign.textContent='✓';sign.style.borderColor=getVar('--ok');
-    tx.innerHTML=`<div class="big">Brak ostrzeżeń przed Tobą</div><div class="sub">do końca odcinka IZ Gdynia</div>`;
+    hero({sign:'✓',sev:getVar('--ok'),ey:'Przed Tobą',big:'Brak ograniczeń',desc:'do końca odcinka w wykazie'});
   }
   // alarm
   const lim=1.0;
@@ -659,19 +791,100 @@ function renderNext(){
     const key=x.r.id+':'+x.dd;
     if(!alerted.has(key)){alerted.add(key);alarm();}
   });
+  announce(up); checkOver(up);
 }
 
 const fmtDist=m=>m<1?Math.round(m*1000)+' m':m.toFixed(m<10?2:1).replace('.',',')+' km';
 let actx=null;
 function alarm(){
   const box=document.getElementById('next');box.classList.remove('alarm');void box.offsetWidth;box.classList.add('alarm');
-  try{navigator.vibrate&&navigator.vibrate([300,150,300]);}catch(e){}
-  if(!sound) return;
+  vib([300,150,300]);
+  beep(3);
+}
+function vib(p){ if(!OPT.vib||muted) return; try{navigator.vibrate&&navigator.vibrate(p);}catch(e){} }
+function beep(n,freq){
+  if(!OPT.beep||muted) return;
   try{
     actx=actx||new (window.AudioContext||window.webkitAudioContext)();
-    [0,0.35,0.7].forEach(t=>{const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;o.connect(g);g.connect(actx.destination);
+    [0,0.35,0.7].slice(0,n||3).forEach(t=>{const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=freq||880;o.connect(g);g.connect(actx.destination);
       g.gain.setValueAtTime(.3,actx.currentTime+t);g.gain.setValueAtTime(0,actx.currentTime+t+.22);o.start(actx.currentTime+t);o.stop(actx.currentTime+t+.25);});
   }catch(e){}
+}
+
+/* ===== Głos ===== */
+let plVoice=null;
+function pickVoice(){try{const v=speechSynthesis.getVoices();plVoice=v.find(x=>/^pl/i.test(x.lang))||null;}catch(e){}}
+if(window.speechSynthesis){pickVoice();speechSynthesis.onvoiceschanged=pickVoice;}
+function say(t,urgent){
+  if(!OPT.voice||muted||!window.speechSynthesis) return;
+  try{ if(urgent) speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.lang='pl-PL'; if(plVoice)u.voice=plVoice; u.rate=1.05; speechSynthesis.speak(u);}catch(e){}
+}
+const kmSay=k=>k.toFixed(1).replace('.',',');
+const torSay=t=>{const l=torList(t);return l.length?(l.length>1?'tory ':'tor ')+l.join(', '):'';};
+let insideIds=new Set(), overState=false, lastOverBeep=0, lastOverSay=0;
+function announce(up){
+  const inside=up.filter(x=>x.m===0), now=new Set(inside.map(x=>x.r.id+':'+x.dd));
+  // wjazd w ograniczenie
+  inside.forEach(x=>{const k=x.r.id+':'+x.dd+':in'; if(!alerted.has(k)){alerted.add(k); if(!insideIds.has(x.r.id+':'+x.dd)) say(`Ograniczenie ${x.v}${x.r.roz?', rozkaz':''}, do kilometra ${kmSay(x.dd>0?x.r.t:x.r.f)}`);}});
+  // koniec ograniczenia
+  if(insideIds.size&&!now.size) say('Koniec ograniczenia. Uwaga na długość składu.');
+  insideIds=now;
+  // zapowiedzi przed ograniczeniem
+  up.filter(x=>x.m>0).slice(0,3).forEach(x=>{
+    [[1.0,'1000'],[0.4,'400']].forEach(([th,id])=>{
+      const k=x.r.id+':'+x.dd+':v'+id;
+      if(x.m<=th&&x.m>th-0.25&&!alerted.has(k)){alerted.add(k);
+        const m=Math.max(100,Math.round(x.m*10)/10*1000);
+        say(`Za ${m} metrów ograniczenie ${x.v}${torSay(x.r.tor)?', '+torSay(x.r.tor):''}${x.r.roz?', rozkaz':''}`);}
+      else if(x.m<=th-0.25) alerted.add(k);
+    });
+  });
+}
+function checkOver(up){
+  const box=document.getElementById('next'), ob=document.getElementById('overBox');
+  const inside=up.filter(x=>x.m===0); const lim=inside.length?Math.min(...inside.map(x=>x.v)):null;
+  const v=cur&&cur.kmh;
+  const over=OPT.over&&lim!=null&&v!=null&&v>lim+OPT.tol;
+  ob.hidden=!over; box.classList.toggle('over',over);
+  if(over){
+    document.getElementById('nEy').textContent=`Przekroczenie – zwolnij do ${lim}`; document.getElementById('nBig').textContent=`${Math.round(v)} km/h`;
+    const t=Date.now();
+    if(t-lastOverBeep>1500){lastOverBeep=t;beep(2,1250);vib([400]);}
+    if(!overState||t-lastOverSay>12000){lastOverSay=t;say(`Przekroczona prędkość. Ograniczenie ${lim}`,true);}
+  }
+  overState=over;
+}
+/* ===== Obiekty na trasie (OSM): stacje, przejazdy, semafory ===== */
+let POIS=[];
+function setPois(raw){
+  POIS=(raw||[]).map(p=>{const b=llToKm(p.lat,p.lon);return b&&b.d<(p.t==='st'?400:60)?{...p,k:b.k}:null;}).filter(Boolean).sort((a,b)=>a.k-b.k);
+  drawPois();
+}
+let poiLayer=null, sigLayer=null;
+function drawPois(){
+  if(!HASMAP) return;
+  if(!poiLayer){poiLayer=L.layerGroup();sigLayer=L.layerGroup();}
+  poiLayer.clearLayers();sigLayer.clearLayers();
+  if(!OPT.poi){map.removeLayer(poiLayer);map.removeLayer(sigLayer);return;}
+  const cr=L.canvas({padding:.3});
+  POIS.forEach(p=>{
+    const pop=`<b>${p.t==='st'?esc(p.name||'Stacja'):p.t==='lc'?'Przejazd kolejowo-drogowy':p.t==='cr'?'Przejście dla pieszych':'Semafor '+esc(p.ref||'')}</b><br>km ${fmtKm(p.k)}`;
+    if(p.t==='st') L.marker([p.lat,p.lon],{icon:L.divIcon({className:'',html:`<span class="poi-st">${esc(p.name||'')}</span>`,iconSize:null,iconAnchor:[0,8]}),zIndexOffset:-100}).bindPopup(pop).addTo(poiLayer);
+    else if(p.t==='sig') L.marker([p.lat,p.lon],{icon:L.divIcon({className:'',html:`<span class="poi-sg">${esc(p.ref||'S')}</span>`,iconSize:null,iconAnchor:[-4,6]})}).bindPopup(pop).addTo(sigLayer);
+    else L.circleMarker([p.lat,p.lon],{renderer:cr,radius:6,color:'#111',weight:2,fillColor:p.t==='lc'?'#ffd400':'#fff',fillOpacity:1}).bindPopup(pop).addTo(sigLayer);
+  });
+  poiZoom();
+}
+function poiZoom(){ if(!HASMAP||!poiLayer||!OPT.poi) return; const z=map.getZoom();
+  if(z>=11) poiLayer.addTo(map); else map.removeLayer(poiLayer);
+  if(z>=14) sigLayer.addTo(map); else map.removeLayer(sigLayer); }
+if(HASMAP) map.on('zoomend',poiZoom);
+function renderPoi(){
+  const el=document.getElementById('poi'); if(!OPT.poi||!cur||!POIS.length){el.innerHTML='';return;}
+  const d=dir()||0, k=cur.k;
+  const nxt=t=>{let best=null;POIS.forEach(p=>{if(p.t!==t)return;const m=d>0?p.k-k:d<0?k-p.k:Math.abs(p.k-k);if(m<-0.02)return;if(!best||m<best.m)best={p,m:Math.max(0,m)};});return best;};
+  const st=nxt('st'),lc=nxt('lc'),sg=nxt('sig');
+  el.innerHTML=[st&&`<span><svg class="ic"><use href="#i-stacja"/></svg>${esc(st.p.name||'stacja')} <b>${fmtDist(st.m)}</b></span>`,lc&&`<span><svg class="ic"><use href="#i-przejazd"/></svg>przejazd <b>${fmtDist(lc.m)}</b></span>`,sg&&`<span><svg class="ic"><use href="#i-semafor"/></svg>${esc(sg.p.ref||'semafor')} <b>${fmtDist(sg.m)}</b></span>`].filter(Boolean).join('');
 }
 
 function update(lat,lon,speed,acc){
@@ -683,8 +896,9 @@ function update(lat,lon,speed,acc){
   const now=Date.now();
   if((speed==null||isNaN(speed))&&lastFix&&now-lastFix.t>500){const dd=dist(lastFix.lat,lastFix.lon,lat,lon);speed=dd/((now-lastFix.t)/1000);}
   lastFix={lat,lon,t:now};
+  cur.kmh=speed!=null&&!isNaN(speed)?speed*3.6:null;
   document.getElementById('hKm').textContent=fmtKm(b.k);
-  document.getElementById('hSp').textContent=speed!=null&&!isNaN(speed)?Math.round(speed*3.6)+' km/h':'—';
+  document.getElementById('hSp').innerHTML=speed!=null&&!isNaN(speed)?Math.round(speed*3.6)+'<i class="u"> km/h</i>':'—';
   const nt=mode==='osm'?nearestTrack(lat,lon):null;
   const good=nt&&nt.d<=Math.max(6,Math.min(acc||0,12));
   gpsTor=good?nt.ref:null;
@@ -695,7 +909,7 @@ function update(lat,lon,speed,acc){
   if(acc){ if(!accCircle) accCircle=L.circle([lat,lon],{radius:acc,weight:1,color:'#2a7bf6',fillOpacity:.08}).addTo(map); else accCircle.setLatLng([lat,lon]).setRadius(acc);}
   if(follow){ if(map.getZoom()<14) map.setView([lat,lon],16,{animate:false}); else map.panTo([lat,lon],{animate:true,duration:.6,noMoveStart:true}); }
   }
-  renderNext(); renderListSoon();
+  renderNext(); renderPoi(); renderListSoon();
 }
 let lastFix=null, listTimer=null;
 function renderListSoon(){ if($('listDlg').hidden) return; if(listTimer) return; listTimer=setTimeout(()=>{listTimer=null;renderList();},1500); }
@@ -703,11 +917,12 @@ function renderListSoon(){ if($('listDlg').hidden) return; if(listTimer) return;
 /* ===== GPS ===== */
 const gpsBtn=document.getElementById('gpsBtn');
 gpsBtn.onclick=async()=>{
-  if(watchId!=null){navigator.geolocation.clearWatch(watchId);watchId=null;gpsBtn.innerHTML='<span class="i">▶</span><span>Start GPS</span>';gpsBtn.classList.remove('on');try{wake&&wake.release();}catch(e){}return;}
+  if(watchId!=null){navigator.geolocation.clearWatch(watchId);watchId=null;gpsBtn.innerHTML='<svg class="ic f"><use href="#i-play"/></svg><span>Start GPS</span>';gpsBtn.classList.remove('on');try{wake&&wake.release();}catch(e){}return;}
   if(!navigator.geolocation){setStatus('Ta przeglądarka nie obsługuje GPS.',true);return;}
   try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();actx.resume();}catch(e){}
+  say('GPS włączony. Linia '+LINE.split('').join(' '));
   try{wake=await navigator.wakeLock.request('screen');}catch(e){}
-  gpsBtn.innerHTML='<span class="i">■</span><span>Stop GPS</span>';gpsBtn.classList.add('on');follow=true;setFollow();
+  gpsBtn.innerHTML='<svg class="ic f"><use href="#i-stop"/></svg><span>Stop GPS</span>';gpsBtn.classList.add('on');follow=true;setFollow();
   watchId=navigator.geolocation.watchPosition(
     p=>update(p.coords.latitude,p.coords.longitude,p.coords.speed,p.coords.accuracy),
     e=>setStatus('GPS: '+(e.code===1?'brak zgody na lokalizację – zezwól w ustawieniach przeglądarki':e.message),true),
@@ -718,8 +933,17 @@ document.addEventListener('visibilitychange',async()=>{if(watchId!=null&&documen
 if(HASMAP){map.on('click',e=>{ if(watchId==null){follow=false;setFollow();update(e.latlng.lat,e.latlng.lng,null,null);} });
 map.on('dragstart',()=>{follow=false;setFollow();});}
 
-const sndBtn=document.getElementById('sndBtn');
-sndBtn.onclick=()=>{sound=!sound;sndBtn.classList.toggle('on',sound);sndBtn.setAttribute('aria-pressed',sound);sndBtn.textContent=sound?'🔔 Alarm dźwiękowy: włączony':'🔕 Alarm dźwiękowy: wyłączony';};
+function applyOpts(){
+  document.querySelectorAll('.tg button[data-k]').forEach(b=>{const on=!!OPT[b.dataset.k];b.classList.toggle('on',on);b.textContent=on?'wł.':'wył.';b.setAttribute('aria-pressed',on);});
+  document.documentElement.classList.toggle('night',OPT.night);
+  document.querySelector('meta[name=theme-color]').content=OPT.night?'#0b0807':'#14181d';
+  document.getElementById('tolTxt').textContent=OPT.tol;
+  const mb=document.getElementById('muteBtn'); mb.innerHTML=`<svg class="ic"><use href="#i-${muted?'cisza':'glos'}"/></svg>`; mb.classList.toggle('muted',muted);
+}
+document.querySelectorAll('.tg button[data-k]').forEach(b=>b.onclick=()=>{const k=b.dataset.k;OPT[k]=!OPT[k];saveOpt();applyOpts();
+  if(k==='poi'){drawPois();renderPoi();} if(k==='voice'&&OPT.voice) say('Komunikaty głosowe włączone'); if(k==='over') renderNext();});
+document.getElementById('muteBtn').onclick=()=>{muted=!muted; if(muted&&window.speechSynthesis) speechSynthesis.cancel(); applyOpts();};
+applyOpts();
 const followBtn=document.getElementById('followBtn');
 function setFollow(){followBtn.classList.toggle('on',follow);}
 followBtn.onclick=()=>{follow=!follow;setFollow();if(follow&&cur&&HASMAP)map.setView([cur.lat,cur.lon],15);};
@@ -770,13 +994,43 @@ function diffWos(oldR,newR){
 }
 let pendingWos=null;
 const $=id=>document.getElementById(id);
+const MIES={stycz:0,luty:1,lut:1,marz:2,kwie:3,maj:4,czerw:5,lip:6,sierp:7,wrze:8,'paź':9,paz:9,listop:10,grud:11};
+function parsePlDate(t){ if(!t) return null; let m=String(t).match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/); if(m) return new Date(+m[3],+m[2]-1,+m[1]);
+  m=String(t).toLowerCase().match(/(\d{1,2})\s+([a-ząćęłńóśźż]+)\s+(\d{4})/); if(!m) return null;
+  const k=Object.keys(MIES).find(x=>m[2].startsWith(x)); return k==null?null:new Date(+m[3],MIES[k],+m[1]); }
+const lastChange=w=>(w.changes&&w.changes.length)?w.changes[w.changes.length-1]:null;
+const wosName=w=>{const c=lastChange(w);return c?`popr. ${c.nr}`:(w.name||'');};
+const touches=(c,w,l)=>{const lp=(w.linePages||{})[l]||[];return c.strony.some(x=>lp.includes(x));};
+function changesHtml(w,newFrom){
+  const ch=w.changes||[]; if(!ch.length) return '<p>Brak wykazu zmian w tym pliku.</p>';
+  return `<table class="chg-t"><tr><th>Nr</th><th>Pismo / ważne od</th><th>Strony</th><th>Dotyczy</th></tr>`+
+   ch.slice().reverse().map((c,i)=>`<tr class="${i===0?'last':''}"><td class="n">${c.nr}</td><td>${esc(c.pismo)}<br><b>od ${esc(c.od)}</b>${newFrom!=null&&c.nr>newFrom?' <span class="lt">NOWA</span>':''}</td><td>${esc(c.strony.join(', '))}</td><td>${
+     Object.keys(LINES).map(l=>touches(c,w,l)?`<span class="lt">L${l}</span>`:'').join('')||'<span class="lt no">inne linie</span>'}</td></tr>`).join('')+'</table>';
+}
+function wosInfoHtml(){
+  const c=lastChange(WOS), to=WOS.valid&&parsePlDate(WOS.valid.to), days=to?Math.ceil((to-Date.now())/864e5):null;
+  return `Obowiązuje: <b>Dodatek 2 IZ Gdynia, ${esc(wosName(WOS))}</b>${c?` (pismo ${esc(c.pismo)}, ważna od ${esc(c.od)})`:''}${WOS.valid?`<br>Wykaz ważny do <b>${esc(WOS.valid.to)}</b>${days!=null&&days<=14?` <span class="err">– zostało ${Math.max(0,days)} dni, wczytaj nowy Dodatek 2</span>`:''}`:''}${WOS.loaded?`<br>Wczytany ${fmtDT(WOS.loaded)}`:''}`;
+}
+function renderPend(){
+  const p=loadPend(), el=$('wosPend');
+  if(!p){el.innerHTML='';return;}
+  el.innerHTML=`<div class="pend"><div>⏳ Zaplanowano <b>${esc(wosName(p))}</b> – włączy się sama <b>${fmtD(p.activate)}</b>.</div><div class="acts"><button id="pendNow" class="pri">Włącz teraz</button><button id="pendDel">Usuń plan</button></div></div>`;
+  $('pendNow').onclick=()=>{savePend(null);applyWos(p);openWos();};
+  $('pendDel').onclick=()=>{savePend(null);renderPend();};
+}
+const fmtD=ts=>new Date(ts).toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric'});
+function loadPend(){try{return JSON.parse(localStorage.getItem('wos-pending')||'null');}catch(e){return null;}}
+function savePend(p){try{p?localStorage.setItem('wos-pending',JSON.stringify(p)):localStorage.removeItem('wos-pending');}catch(e){}}
+function checkPend(){const p=loadPend(); if(p&&Date.now()>=p.activate){savePend(null);applyWos(p);setStatus(`Włączono zaplanowaną poprawkę: ${wosName(p)}.`);}}
 function openWos(){
-  $('wosInfo').innerHTML=`Teraz: <b>${esc(WOS.name)}</b>${WOS.valid?`, ważny od ${esc(WOS.valid.from)} do ${esc(WOS.valid.to)}`:''} · linia 202: ${(WOS.lines['202']||[]).length}, linia 250: ${(WOS.lines['250']||[]).length} pozycji${WOS.loaded?` · wczytany ${fmtDT(WOS.loaded)}`:''}`;
+  $('wosInfo').innerHTML=wosInfoHtml();
+  $('wosChanges').innerHTML=changesHtml(WOS);
+  renderPend();
   $('wosMsg').textContent='';$('wosDiff').innerHTML='';$('wosApplyBar').hidden=true;pendingWos=null;
   openSheet('wosDlg');
 }
 $('wosBtn').onclick=()=>{$('setDlg').hidden=true;openWos();};
-$('wosClose').onclick=$('wosCancel').onclick=()=>{$('wosDlg').hidden=true;};
+$('wosClose').onclick=$('wosClose2').onclick=$('wosCancel').onclick=()=>{$('wosDlg').hidden=true;};
 $('wosPick').onclick=()=>{$('wosFile').value='';$('wosFile').click();};
 $('wosFile').onchange=async e=>{
   const f=e.target.files[0]; if(!f) return;
@@ -787,11 +1041,23 @@ $('wosFile').onchange=async e=>{
     Object.keys(LINES).forEach(l=>{const r=parseWos(pages,l);lines[l]=r.R;notes[l]=r.note;valid=valid||r.valid;});
     if(!Object.values(lines).some(a=>a.length)) throw new Error('W tym pliku nie znalazłem ostrzeżeń dla linii 202 ani 250. Czy to Dodatek 2 dla IZ Gdynia?');
     const res={valid};
+    const cz=parseChanges(pages);
     const name=f.name.replace(/\.pdf$/i,'').replace(/_/g,' ');
     const pm=name.match(/popr\.?\s*(\d+)/i);
-    pendingWos={name:pm?`Dodatek 2, popr. ${pm[1]}`:name,valid:res.valid,lines,notes,loaded:Date.now()};
+    pendingWos={name:pm?`Dodatek 2, popr. ${pm[1]}`:name,valid:res.valid,lines,notes,changes:cz.changes,linePages:Object.fromEntries(Object.keys(LINES).map(l=>[l,cz.linePages[l]||[]])),loaded:Date.now()};
+    const oldC=lastChange(WOS), newC=lastChange(pendingWos), oldNr=oldC?oldC.nr:0;
+    const fresh=(pendingWos.changes||[]).filter(c=>c.nr>oldNr);
     const dl=Object.keys(LINES).map(l=>({l,d:diffWos((WOS.lines[l]||[]),lines[l]),n:lines[l].length}));
-    msg.innerHTML=`Odczytano${res.valid?` wykaz ważny do <b>${esc(res.valid.to)}</b>`:''}:<br>`+dl.map(({l,d,n})=>`Linia ${l}: <b>${n}</b> pozycji – <b>${d.add.length}</b> nowych, <b>${d.del.length}</b> zniesionych, <b>${d.chg.length}</b> ze zmienioną prędkością`).join('<br>');
+    let head;
+    if(newC&&oldC&&newC.nr<oldNr) head=`<span class="err">Ten plik ma starszą poprawkę (${newC.nr}) niż obecna (${oldNr}).</span>`;
+    else if(newC&&newC.nr===oldNr) head=`To ta sama poprawka co obecna (nr ${oldNr}).`;
+    else if(fresh.length) head=`Nowe poprawki: `+fresh.map(c=>`<b>nr ${c.nr}</b> (ważna od ${esc(c.od)}, str. ${esc(c.strony.join(', '))}${Object.keys(LINES).filter(l=>touches(c,pendingWos,l)).map(l=>` <span class="lt">dotyczy L${l}</span>`).join('')||' – <i>nie dotyczy linii 202/250</i>'})`).join('; ');
+    else head='Nie znalazłem wykazu zmian w pliku.';
+    $('wosChanges').innerHTML=changesHtml(pendingWos,oldNr);
+    // poprawka ważna od przyszłej daty -> możliwość zaplanowania
+    const od=newC&&parsePlDate(newC.od), lb=$('wosLater');
+    lb.hidden=!(od&&od>Date.now()); if(!lb.hidden){lb.textContent=`Włącz ${fmtD(od)}`;lb.onclick=()=>{savePend({...pendingWos,activate:od.getTime()});$('wosApplyBar').hidden=true;renderPend();msg.innerHTML=`Zaplanowano poprawkę nr ${newC.nr} na ${fmtD(od)}. Do tego dnia obowiązuje obecny wykaz.`;};}
+    msg.innerHTML=head+`<br>Odczytano${res.valid?` wykaz ważny do <b>${esc(res.valid.to)}</b>`:''}:<br>`+dl.map(({l,d,n})=>`Linia ${l}: <b>${n}</b> pozycji – <b>${d.add.length}</b> nowych, <b>${d.del.length}</b> zniesionych, <b>${d.chg.length}</b> ze zmienioną prędkością`).join('<br>');
     const line=r=>`km ${fmtKm(r.f)}–${fmtKm(r.t)}, tor ${esc(r.tor)}: ${vTxt(r)} – ${esc(r.why||'')}`;
     $('wosDiff').innerHTML=dl.map(({l,d})=>[...d.add.map(r=>`<div class="add">+ L${l} ${line(r)}</div>`),...d.chg.map(([o,r])=>`<div class="chg">L${l} ${line(r)} (było ${vTxt(o)})</div>`),...d.del.map(r=>`<div class="del">L${l} ${line(r)}</div>`)].join('')).join('')||'<div>Brak zmian względem obecnego wykazu.</div>';
     $('wosApplyBar').hidden=false;
@@ -800,6 +1066,7 @@ $('wosFile').onchange=async e=>{
 function applyWos(w){WOS=w; if(w===BUILTIN){try{localStorage.removeItem(WOS_KEY);}catch(e){}} else saveLS(WOS_KEY,w); refreshAll();}
 $('wosApply').onclick=()=>{if(pendingWos){applyWos(pendingWos);$('wosDlg').hidden=true;}};
 $('wosReset').onclick=()=>{applyWos(BUILTIN);openWos();$('wosMsg').textContent='Przywrócono wykaz wbudowany (popr. 7).';};
+checkPend(); setInterval(checkPend,60000);
 
 function updRozCnt(){const n=R.filter(r=>r.roz).length,c=document.getElementById('rozCnt');c.hidden=!n;c.textContent=n;}
 function refreshAll(){rebuild();updRozCnt();if(typeof setupLine==='function')setupLine();alerted.clear();drawAll();renderNext();renderList();showSrc();}
