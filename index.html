@@ -1,0 +1,875 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14181d">
+<title>Ostrzeżenia 202 / 250</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+/* Kabinowy pulpit: ciemny panel na dole, mapa na całym ekranie */
+:root{
+  --bg:#14181d; --panel:#1c2229; --panel2:#252d36; --line:#334050;
+  --fg:#e9eef3; --mute:#93a1b0; --acc:#f2c230;
+  --roz:#a855f7; --v20:#e5484d; --v40:#f07b2c; --v60:#e8b923; --v90:#3e8ef7; --ok:#3fb27f;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 var(--sans)}
+#map{position:absolute;inset:0;bottom:var(--ph,46%);z-index:1}
+#panel{position:absolute;left:0;right:0;bottom:0;height:var(--ph,46%);background:var(--panel);
+  border-top:2px solid var(--line);display:flex;flex-direction:column;z-index:2;
+  padding-bottom:env(safe-area-inset-bottom,0px)}
+.bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px max(10px,env(safe-area-inset-left,0px)) 6px;border-bottom:1px solid var(--line)}
+button,select{font:inherit;color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 10px;cursor:pointer}
+button.on{background:var(--acc);color:#14181d;border-color:var(--acc);font-weight:700}
+button:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+#gpsBtn{font-weight:700}
+.hud{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-bottom:1px solid var(--line)}
+.hud div{background:var(--panel);padding:6px 10px;min-width:0}
+.hud small{display:block;color:var(--mute);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.hud b{font:700 22px/1.15 var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+#next{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center}
+#next.inside{background:#3a1416}
+#next.near{background:#3a2a10}
+.sign{flex:none;width:58px;height:58px;border-radius:50%;background:#fff;border:6px solid var(--v20);
+  display:grid;place-items:center;font:800 22px var(--mono);color:#111}
+#nextTxt{min-width:0}
+#nextTxt .big{font-size:18px;font-weight:700}
+#nextTxt .sub{color:var(--mute);font-size:13px}
+#list{flex:1;overflow:auto;-webkit-overflow-scrolling:touch}
+.row{display:grid;grid-template-columns:52px 64px 1fr auto;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer}
+.row:hover{background:var(--panel2)}
+.row.past{opacity:.45}
+.v{width:48px;height:48px;border-radius:50%;background:#fff;border:5px solid var(--v20);display:grid;place-items:center;font:800 18px/1 var(--mono);color:#111}
+.v.two{font-size:12px;line-height:1.05;text-align:center}
+.trk{font:800 15px/1.1 var(--mono);text-align:center;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 2px;color:var(--acc)}
+.trk small{display:block;font:600 9.5px var(--sans);color:var(--mute);letter-spacing:.08em}
+.rs{display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:auto}
+.rs .c{width:36px;height:36px;border-radius:50%;background:#fff;border:4px solid #e5484d;display:grid;place-items:center;font:800 14px/1 ui-monospace,Menlo,monospace;color:#111;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.rs .c.two{font-size:9.5px;text-align:center;line-height:1.05}
+.rs .tl{font:700 11px ui-monospace,Menlo,monospace;background:#14181d;color:#f2c230;padding:1px 5px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.far .rs .tl{display:none}
+.far .rs .c{transform:scale(.7)}
+body.nomap #map{display:none}
+body.nomap #panel{height:100%;top:0}
+body.nomap #resize{display:none}
+.row .t{min-width:0}
+.row .t b{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.row .t .desc{display:block;color:var(--mute);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .d{font:700 14px var(--mono);text-align:right;white-space:nowrap}
+.tag{display:inline-block;font-size:10.5px;padding:1px 5px;border-radius:4px;margin-left:4px;vertical-align:1px;background:var(--panel2);color:var(--acc);border:1px solid var(--line)}
+.tag.roz{background:var(--roz);color:#fff;border-color:var(--roz);font-weight:700}
+.dlg{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center}
+.dlg>div{background:var(--panel);border-top:2px solid var(--line);width:100%;max-width:620px;max-height:92%;overflow:auto;border-radius:14px 14px 0 0;
+  padding:16px max(16px,env(safe-area-inset-left,0px)) calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
+.dlg h2{margin:0;font-size:19px}
+.dlg p{margin:0;color:var(--mute);font-size:13.5px}
+.dlg .acts{display:flex;gap:8px;flex-wrap:wrap}
+.dlg .acts button{flex:1 1 auto}
+button.pri{background:var(--acc);color:#14181d;border-color:var(--acc);font-weight:700}
+button.rozb{background:var(--roz);border-color:var(--roz);color:#fff;font-weight:700}
+button.danger{border-color:var(--v20);color:#ff8a8d}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mute);min-width:0}
+.grid label.full{grid-column:1/-1}
+.grid input,.grid select{font:16px var(--sans);color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%;min-width:0}
+.diff{display:flex;flex-direction:column;gap:4px;font-size:13.5px}
+.diff div{padding:6px 8px;border-radius:6px;background:var(--panel2)}
+.diff .add{border-left:4px solid var(--ok)} .diff .del{border-left:4px solid var(--v20);text-decoration:line-through;opacity:.8} .diff .chg{border-left:4px solid var(--v60)}
+.rozl{display:flex;flex-direction:column;gap:6px}
+.rozl div{display:flex;gap:8px;align-items:center;background:var(--panel2);border-left:4px solid var(--roz);border-radius:6px;padding:6px 8px;font-size:13.5px}
+.rozl div span{flex:1;min-width:0}
+.err{color:#ff8a8d;font-size:13.5px}
+#ocrMsg{font-size:13.5px}
+.ocrl{display:flex;flex-direction:column;gap:10px}
+.oc{border:1px solid var(--line);border-left:4px solid var(--roz);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.oc.off{opacity:.5;border-left-color:var(--line)}
+.oc .h{display:flex;gap:8px;align-items:center;font-weight:700}
+.oc .h input{width:22px;height:22px}
+.oc small{color:var(--mute);font-family:var(--mono);font-size:11.5px;word-break:break-word}
+.oc .warn{color:var(--v60);font-size:12.5px}
+.thumbs{display:flex;gap:6px;flex-wrap:wrap}
+.thumbs img{height:64px;border-radius:4px;border:1px solid var(--line);cursor:zoom-in}
+.thumbs img.big{height:auto;width:100%;cursor:zoom-out}
+#note{font-size:12.5px;padding:7px 12px;background:var(--panel2);border-bottom:1px solid var(--line);color:var(--fg)}
+#note b{color:var(--acc)}
+#status{font-size:12px;color:var(--mute);padding:4px 12px;border-top:1px solid var(--line)}
+#status.warn{color:var(--v60)}
+#resize{position:absolute;left:50%;top:-14px;transform:translateX(-50%);width:60px;height:12px;border-radius:6px;background:var(--line);border:none;padding:0}
+.leaflet-popup-content{font:14px/1.4 var(--sans)}
+.leaflet-popup-content a{font-weight:700}
+.me{width:20px;height:20px;border-radius:50%;background:#2a7bf6;border:3px solid #fff;box-shadow:0 0 0 6px rgba(42,123,246,.3)}
+.km-lbl{font:700 11px var(--mono);color:#14181d;background:var(--acc);padding:1px 4px;border-radius:3px;white-space:nowrap}
+@keyframes flash{50%{background:#7a1d20}}
+#next.alarm{animation:flash .5s 6}
+@media (prefers-reduced-motion:reduce){#next.alarm{animation:none}}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="panel">
+  <button id="resize" aria-label="Zmień wysokość panelu"></button>
+  <div class="bar">
+    <button id="gpsBtn">▶ Start GPS</button>
+    <select id="lineSel" aria-label="Linia"><option value="202">Linia 202 Gdańsk – Słupsk</option><option value="250">Linia 250 SKM Gdańsk – Rumia</option></select>
+    <select id="dirSel" aria-label="Kierunek jazdy">
+      <option value="auto">Kierunek: auto</option>
+      <option value="1" id="dirOdd">↑ nieparzysty</option>
+      <option value="-1" id="dirEven">↓ parzysty</option>
+    </select>
+    <select id="torSel" aria-label="Tor">
+      <option value="all">Wszystkie tory</option>
+    </select>
+    <button id="sndBtn" class="on" aria-pressed="true">🔔 Alarm</button>
+    <button id="followBtn" class="on">⌖ Śledź</button>
+    <button id="rozBtn" class="rozb">✍ Rozkaz</button>
+    <button id="wosBtn">📄 Wykaz</button>
+  </div>
+  <div class="hud">
+    <div><small>Kilometr</small><b id="hKm">—</b></div>
+    <div><small>Prędkość GPS</small><b id="hSp">—</b></div>
+    <div><small>Od toru</small><b id="hOff">—</b></div>
+  </div>
+  <div id="next"><div class="sign" id="nSign">—</div><div id="nextTxt"><div class="big">Włącz GPS albo dotknij mapy</div><div class="sub">Dotknięcie mapy (bez GPS) = symulacja pozycji</div></div></div>
+  <div id="note" hidden></div>
+  <div id="list"></div>
+  <div id="status">Ładowanie geometrii linii…</div>
+</div>
+
+<div class="dlg" id="wosDlg" hidden><div>
+  <h2>Wykaz ostrzeżeń stałych</h2>
+  <p id="wosInfo"></p>
+  <p>Pobierz nową poprawkę Dodatku 2 (PDF) z portalu i wybierz ją tutaj. Aplikacja odczyta tabelę dla linii 202 i pokaże, co się zmieniło. Plik zostaje na telefonie.</p>
+  <input type="file" id="wosFile" accept="application/pdf,.pdf" hidden>
+  <div class="acts"><button class="pri" id="wosPick">Wybierz plik PDF</button><button id="wosReset">Przywróć wbudowany</button><button id="wosClose">Zamknij</button></div>
+  <div id="wosMsg"></div>
+  <div class="diff" id="wosDiff"></div>
+  <div class="acts" id="wosApplyBar" hidden><button class="pri" id="wosApply">Zastosuj nowy wykaz</button><button id="wosCancel">Anuluj</button></div>
+</div></div>
+
+<div class="dlg" id="rozDlg" hidden><div>
+  <h2>Rozkaz pisemny – ostrzeżenia doraźne</h2>
+  <p>Przepisz ostrzeżenia z rozkazu otrzymanego na początku służby. Będą na mapie i liście na fioletowo, z alarmem jak stałe. Same znikną po czasie „ważne do”.</p>
+  <div class="acts"><button type="button" class="pri" id="rozPhoto">📷 Wczytaj ze zdjęć (można kilka stron)</button></div>
+  <input type="file" id="rozFiles" accept="image/*" multiple hidden>
+  <div id="ocrMsg"></div>
+  <div id="ocrList" class="ocrl"></div>
+  <div class="acts" id="ocrBar" hidden><button class="rozb" id="ocrAdd">Dodaj zaznaczone</button><button id="ocrCancel">Odrzuć</button></div>
+  <p style="margin-top:4px"><b style="color:var(--fg)">Albo wpisz ręcznie:</b></p>
+  <form id="rozForm" class="grid" novalidate>
+    <label>Nr rozkazu<input id="rNr" inputmode="text" placeholder="np. O-12/26"></label>
+    <label>Tor<input id="rTor" inputmode="text" placeholder="1" required></label>
+    <label>Od km<input id="rF" inputmode="decimal" placeholder="88,350" required></label>
+    <label>Do km<input id="rT" inputmode="decimal" placeholder="88,400" required></label>
+    <label>Prędkość km/h<input id="rV" inputmode="numeric" placeholder="30" required></label>
+    <label>Kierunek<select id="rDir"><option value="both">oba kierunki</option><option value="odd">nieparzysty (km rośnie)</option><option value="even">parzysty (km maleje)</option></select></label>
+    <label class="full">Przyczyna / uwagi<input id="rWhy" placeholder="np. roboty torowe"></label>
+    <label class="full">Ważne do<input id="rUntil" type="datetime-local"></label>
+    <div class="acts full" style="grid-column:1/-1"><button type="submit" class="rozb">Dodaj ostrzeżenie</button><button type="button" id="rozHere">Wstaw mój km</button></div>
+    <div class="err full" id="rozErr" style="grid-column:1/-1"></div>
+  </form>
+  <div class="rozl" id="rozList"></div>
+  <div class="acts"><button class="danger" id="rozClear">Koniec służby – usuń wszystkie</button><button id="rozClose">Gotowe</button></div>
+</div></div>
+
+<script>
+/* ===== Wykaz ostrzeżeń stałych – wbudowany: Dodatek 2 IZ Gdynia popr. 7 (linia 202, kilometraż linii 202) =====
+   odd = prędkość w kierunku nieparzystym (rosnący km), even = parzystym (malejący km); null = brak ograniczenia w tym kierunku */
+const BUILTIN = {"name":"Dodatek 2 IZ Gdynia, popr. 7","lines":{"202":[{"f":2.75,"t":2.774,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":3.347,"t":3.367,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":3.913,"t":3.933,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":7.066,"t":7.09,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":8.278,"t":8.296,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":8.667,"t":8.685,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":10.918,"t":10.936,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":11.738,"t":11.756,"tor":"wsz.","odd":30,"even":30,"why":"Obiekt inżynieryjny – tylko pociągi klasy obciążenia D4","st":"","d4":1},{"f":20.836,"t":21.408,"tor":"8","odd":100,"even":null,"why":"Prędkość drogowa (Vd)","st":"Gdańsk Osowa Gdynia Wielki Kack","vd":1},{"f":20.961,"t":21.37,"tor":"5","odd":100,"even":null,"why":"Prędkość drogowa (Vd)","st":"Gdynia Główna","vd":1},{"f":20.98,"t":21.547,"tor":"8","odd":null,"even":100,"why":"Prędkość drogowa (Vd)","st":"Gdynia Główna","vd":1},{"f":21.043,"t":21.528,"tor":"5","odd":null,"even":100,"why":"Prędkość drogowa (Vd)","st":"Gdynia Główna","vd":1},{"f":81,"t":81.1,"tor":"1","odd":40,"even":40,"why":"Nowo ułożony rozjazd Ograniczenie prędkości jazdy po rozjeździe na kierunek zwrotny","st":"Lębork – Pogorzelice","star":1},{"f":81,"t":81.05,"tor":"2","odd":40,"even":40,"why":"Nowo ułożony rozjazd","st":"Lębork – Pogorzelice","star":1},{"f":87.74,"t":87.79,"tor":"4","odd":50,"even":50,"why":"Budowa przejścia pod torami","st":"Pogorzelice","star":1,"nowe":1},{"f":88.35,"t":88.4,"tor":"2","odd":50,"even":50,"why":"Przebudowa przepustu","st":"Pogorzelice","star":1,"nowe":1},{"f":88.6,"t":88.65,"tor":"2","odd":50,"even":50,"why":"Przebudowa przepustu","st":"Pogorzelice – Potęgowo","star":1,"nowe":1},{"f":95.523,"t":95.573,"tor":"1","odd":50,"even":50,"why":"Przebudowa wiaduktu","st":"Pogorzelice – Potęgowo","star":1,"nowe":1},{"f":96.665,"t":96.715,"tor":"1","odd":50,"even":50,"why":"Przebudowa wiaduktu","st":"Potęgowo","star":1,"nowe":1},{"f":98.7,"t":98.925,"tor":"1","odd":40,"even":40,"why":"Układ geometryczny toru","st":"Potęgowo","star":1,"nowe":1},{"f":100.4,"t":100.45,"tor":"1","odd":50,"even":50,"why":"Nierówność toru w planie i profilu","st":"Potęgowo","star":1,"nowe":1},{"f":101.43,"t":101.515,"tor":"1","odd":40,"even":40,"why":"Nowo ułożony rozjazd Ograniczenie prędkości jazdy po rozjeździe na kierunek zwrotny","st":"Potęgowo – Damnica","star":1,"nowe":1},{"f":102.57,"t":102.62,"tor":"1","odd":50,"even":50,"why":"Przebudowa wiaduktu","st":"Potęgowo – Damnica","star":1,"nowe":1},{"f":105.93,"t":105.98,"tor":"1","odd":50,"even":50,"why":"Budowa przejścia pod torami","st":"Potęgowo – Damnica","star":1,"nowe":1},{"f":110.67,"t":110.72,"tor":"1","odd":50,"even":50,"why":"Przebudowa przepustu","st":"Damnica","star":1,"nowe":1},{"f":111.53,"t":111.61,"tor":"2","odd":40,"even":40,"why":"Nowo ułożony rozjazd","st":"Damnica","star":1,"nowe":1},{"f":112.6,"t":112.875,"tor":"2","odd":40,"even":40,"why":"Układ geometryczny toru","st":"Damnica","star":1},{"f":121.98,"t":122.2,"tor":"1","odd":50,"even":50,"why":"Układ geometryczny toru Budowa wiaduktu","st":"Jezierzyce Słupskie","star":1},{"f":121.98,"t":122.2,"tor":"2","odd":50,"even":50,"why":"Układ geometryczny toru Budowa wiaduktu","st":"Jezierzyce Słupskie","star":1,"nowe":1},{"f":121.98,"t":122.2,"tor":"3","odd":50,"even":50,"why":"Układ geometryczny toru","st":"Jezierzyce Słupskie","star":1},{"f":128.09,"t":128.14,"tor":"1","odd":50,"even":50,"why":"Budowa wiaduktu; Nierówność toru w planie i profilu","st":"Jezierzyce Słupskie – Słupsk","star":1,"nowe":1},{"f":129.05,"t":129.375,"tor":"1","odd":30,"even":30,"why":"Tymczasowa/prowizoryczna konstrukcja","st":"Jezierzyce Słupskie – Słupsk","star":1},{"f":129.375,"t":130.2,"tor":"1","odd":50,"even":50,"why":"Przełączenie sterowania urządzeń srk","st":"Jezierzyce Słupskie – Słupsk","star":1},{"f":130.612,"t":130.97,"tor":"9a, 9","odd":20,"even":null,"why":"Wjazd na tor zakończony kozłem oporowym","st":"Jezierzyce Słupskie – Słupsk","star":1,"nowe":1},{"f":131.169,"t":131.172,"tor":"1","odd":20,"even":20,"why":"Brak widoczności czoła pociągu na przejeździe","st":"Słupsk","star":1},{"f":131.169,"t":131.172,"tor":"3, 5, 7","odd":20,"even":20,"why":"Brak widoczności czoła pociągu na przejeździe","st":"Słupsk","star":1}],"250":[{"f":0.08,"t":20.992,"tor":"501","odd":null,"even":null,"why":"Dla ED250 max pobór mocy prądu trakcji 1000A","st":"Gdańsk Główny Gdynia Główna","star":1},{"f":0.08,"t":20.992,"tor":"502","odd":null,"even":null,"why":"Dla ED250 max pobór mocy prądu trakcji 1000A","st":"Gdańsk Główny Gdynia Główna","star":1},{"f":5.553,"t":5.556,"tor":"501","odd":20,"even":20,"why":"Brak widoczności czoła pociągu na przejściu dla pieszych.","st":"Gdańsk Wrzeszcz – Gdańsk Oliwa"},{"f":11.52,"t":11.685,"tor":"501","odd":50,"even":50,"why":"Układ geometryczny toru","st":"Sopot"},{"f":15.85,"t":15.95,"tor":"501","odd":20,"even":20,"why":"Nieodpowiednia geometria toru dla ED250","st":"Gdynia Orłowo – Gdynia Główna","star":1},{"f":27.4,"t":27.9,"tor":"112, 163","odd":20,"even":20,"why":"Układ geometryczny torów","st":"Gdynia Cisowa","star":1},{"f":28.643,"t":28.657,"tor":"502","odd":50,"even":50,"why":"Ograniczona widoczność czoła pociągu na przejeździe","st":"Gdynia Chylonia – Rumia","star":1}]},"notes":{"202":"Na obiektach inżynieryjnych od km 2,750 do 2,774; od km 3,347 do 3,367; od km 3,913 do 3,933; od km 7,066 do 7,090; od km 8,278 do 8,296; od km8,667 do 8,685; od km 10,918 do 10,936; od km 11,738 do 11,756; dla klasy obciążenia D4 obowiązuje ograniczenie prędkości do 30 km/h.","250":"Maksymalna prędkość dla pociągów pasażerskich awaryjnie kierowanych na tory 501 i 502 linii 250 na odcinku Gdansk Główny - Rumia wynosi 70 km/h"},"valid":{"from":"30 sierpień 2026 r.","to":"12 grudzień 2026"}};
+/* Linie do wyboru: przybliżone położenie stacji (km, lat, lon) – zapas, gdy brak danych OSM */
+const LINES={
+ '202':{name:'202 Gdańsk Gł. – Słupsk',odd:'Gdańsk→Słupsk',even:'Słupsk→Gdańsk',kmMin:-1.5,kmMax:146,step:5,box:'54.25,16.7,54.7,18.8',anch:[
+ [0.0,54.3556,18.6436,'Gdańsk Główny'],[3.7,54.3806,18.6061,'Gdańsk Wrzeszcz'],[8.0,54.4119,18.5634,'Gdańsk Oliwa'],
+ [11.6,54.4415,18.5612,'Sopot'],[16.0,54.4810,18.5440,'Gdynia Orłowo'],[21.0,54.5206,18.5296,'Gdynia Główna'],
+ [25.3,54.5428,18.4690,'Gdynia Chylonia'],[27.6,54.5534,18.4413,'Gdynia Cisowa'],[31.9,54.5706,18.3961,'Rumia'],
+ [35.6,54.6040,18.3505,'Reda'],[43.3,54.6060,18.2370,'Wejherowo'],[54.5,54.5627,18.1046,'Luzino'],
+ [60.5,54.5584,18.0340,'Strzebielino Morskie'],[66.5,54.5585,17.9416,'Godętowo'],[74.5,54.5560,17.8150,'Nowa Wieś Lęborska'],
+ [78.8,54.5425,17.7495,'Lębork'],[87.8,54.5236,17.6237,'Pogorzelice'],[98.8,54.4920,17.4854,'Potęgowo'],
+ [111.6,54.4943,17.2900,'Damnica'],[122.1,54.4875,17.1430,'Jezierzyce Słupskie'],[130.8,54.4630,17.0330,'Słupsk'],
+ [137.5,54.4790,16.9380,'Redzikowo'],[145.5,54.4900,16.8350,'gr. IZ Gdynia/Szczecin']]},
+ '250':{name:'250 Gdańsk Gł. – Rumia (SKM)',odd:'Gdańsk→Rumia',even:'Rumia→Gdańsk',kmMin:-1.6,kmMax:33,step:2,box:'54.30,18.30,54.62,18.70',anch:[
+ [-1.0,54.3477,18.6485,'Gdańsk Śródmieście'],[0.0,54.3556,18.6436,'Gdańsk Główny'],[2.5,54.3712,18.6205,'Gdańsk Politechnika'],
+ [4.0,54.3806,18.6061,'Gdańsk Wrzeszcz'],[5.6,54.3929,18.5968,'Gdańsk Zaspa'],[7.0,54.4051,18.5806,'Gdańsk Przymorze'],
+ [8.5,54.4119,18.5634,'Gdańsk Oliwa'],[9.6,54.4232,18.5601,'Gdańsk Żabianka'],[10.3,54.4299,18.5617,'Sopot Wyścigi'],
+ [11.6,54.4415,18.5612,'Sopot'],[13.0,54.4552,18.5530,'Sopot Kamienny Potok'],[15.0,54.4810,18.5440,'Gdynia Orłowo'],
+ [16.7,54.4948,18.5396,'Gdynia Redłowo'],[18.6,54.5096,18.5345,'Gdynia Wzgórze Św. Maksymiliana'],[20.9,54.5206,18.5296,'Gdynia Główna'],
+ [22.3,54.5328,18.5195,'Gdynia Stocznia'],[23.8,54.5385,18.4996,'Gdynia Grabówek'],[25.0,54.5428,18.4850,'Gdynia Leszczynki'],
+ [26.4,54.5462,18.4644,'Gdynia Chylonia'],[27.7,54.5534,18.4413,'Gdynia Cisowa'],[30.0,54.5642,18.4140,'Rumia Janowo'],[32.5,54.5706,18.3961,'Rumia']]}
+};
+let LINE='202'; try{const l=localStorage.getItem('line'); if(LINES[l]) LINE=l;}catch(e){}
+const WOS_KEY='wos-v2', ROZ_KEY='l202-roz';
+let WOS=BUILTIN;
+try{const x=JSON.parse(localStorage.getItem(WOS_KEY)||'null'); if(x&&x.lines) WOS=x;}catch(e){}
+let ROZ=[]; try{ROZ=(JSON.parse(localStorage.getItem(ROZ_KEY)||'[]')||[]).map(x=>({line:'202',...x}));}catch(e){}
+let R=[];
+const lineR=w=>(w.lines&&w.lines[LINE])||[];
+function rebuild(){
+  const now=Date.now(); ROZ=ROZ.filter(x=>!x.until||x.until>now);
+  R=[...lineR(WOS).map(r=>({...r})), ...ROZ.filter(x=>x.line===LINE).map(x=>({...x,roz:1}))].map((r,i)=>({...r,id:i}));
+}
+rebuild();
+function saveLS(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+/* Parser wykazu ostrzeżeń stałych PLK (Dodatek 2) – wejście: strony z elementami tekstu {s,x,y,w} */
+function parseWos(pages, LINE){
+  LINE = String(LINE||'202');
+  const KM=/^-?\d{1,3},\d{3}$/;
+  const num=s=>parseFloat(s.replace(',','.'));
+  const out=[], allText=[];
+  let cols=null, section=null, sectionText={}, preLine=null;
+  const ctr=t=>t.x+t.w/2;
+  const colOf=x=>{ if(!cols) return -1; let b=0,bd=1e9; cols.forEach((c,i)=>{const d=Math.abs(c-x); if(d<bd){bd=d;b=i;}}); return b+1; };
+
+  pages.forEach((pg,pi)=>{
+    const items=pg.items.filter(t=>t.s.trim()).map(t=>({...t,s:t.s.trim()}));
+    // wiersz nagłówka 1..9
+    const byY={}; items.forEach(t=>{const k=Math.round(t.y);(byY[k]=byY[k]||[]).push(t);});
+    let headY=null;
+    for(const k in byY){const r=byY[k].filter(t=>/^[1-9]$/.test(t.s)).sort((a,b)=>a.x-b.x);
+      if(r.length===9 && r.map(t=>t.s).join('')==='123456789'){cols=r.map(ctr);headY=+k;}}
+    const its=items.filter(t=>!(headY!=null&&Math.abs(t.y-headY)<2)).sort((a,b)=>b.y-a.y||a.x-b.x);
+    its.forEach(t=>{allText.push(t.s);
+      const m=t.s.match(/Linia nr\s*(\d+)/); if(m){preLine=m[1];return;}
+      if(preLine){ if(/^(IZ|SKM|PKM)\s+\S+$/.test(t.s)||KM.test(t.s)){preLine=null;return;}
+        if(!/^Granica|^\d+$/.test(t.s)&&!(t.s===t.s.toUpperCase()&&/[A-ZĄĆĘŁŃÓŚŹŻ]{3}/.test(t.s))) (sectionText['_p'+preLine]=sectionText['_p'+preLine]||[]).push(t.s); }});
+    // podział na odcinki "Linia nr N"
+    const marks=[]; its.forEach(t=>{const m=t.s.match(/Linia nr\s*(\d+)/); if(m) marks.push({y:t.y,line:m[1]});});
+    const secAt=y=>{let s=section; for(const m of marks) if(m.y>=y-0.5) s=m.line; return s;};
+    // paragrafy (D4 itp.) – zbiór tekstu odcinka poza tabelą
+    its.forEach(t=>{const s=secAt(t.y); if(s){(sectionText[s]=sectionText[s]||[]).push(t.s);} });
+    const walls=its.filter(t=>t.w>150||/Linia nr|Granica IZ/.test(t.s)).map(t=>t.y);
+    // wiersze z km
+    const anchors=[];
+    const rows={}; its.forEach(t=>{const k=t.y.toFixed(0);(rows[k]=rows[k]||[]).push(t);});
+    its.forEach(t=>{
+      if(!cols||!KM.test(t.s)||colOf(ctr(t))!==2) return;
+      const to=its.find(u=>KM.test(u.s)&&colOf(ctr(u))===3&&Math.abs(u.y-t.y)<2);
+      if(to) anchors.push({y:t.y,f:num(t.s),t:num(to.s)});
+    });
+    anchors.sort((a,b)=>b.y-a.y);
+    // stacje (kol. 1) – sklejanie sąsiednich linii
+    const c1=its.filter(t=>cols&&colOf(ctr(t))===1&&t.y>20).sort((a,b)=>b.y-a.y);
+    const st=[]; c1.forEach(t=>{const l=st[st.length-1]; if(l&&l.yb-t.y<11){l.s+=(/-$/.test(l.s)||t.s==='-'?' ':' ')+t.s;l.yb=t.y;} else st.push({s:t.s,yt:t.y,yb:t.y});});
+    st.forEach(g=>{g.s=g.s.replace(/\s+-\s*/g,' – ').replace(/\s+/g,' ').trim(); g.yc=(g.yt+g.yb)/2;});
+    const c4=its.filter(t=>cols&&colOf(ctr(t))===4&&t.w<=150&&t.y>20).sort((a,b)=>b.y-a.y||a.x-b.x);
+    // linie kolumny 4 (sklejone w poziomie)
+    const ln4=[]; c4.filter(t=>t.s!=='-').forEach(t=>{const l=ln4[ln4.length-1];
+      if(l&&Math.abs(l.y-t.y)<2){l.s+=(t.x-(l.last.x+l.last.w)<1.5?'':' ')+t.s;l.last=t;} else ln4.push({s:t.s,y:t.y,last:t});});
+    // przypisanie: ciągłe grupy linii -> wiersze z km, minimalizacja odległości środka grupy od wiersza (komórki są centrowane)
+    const NL=ln4.length, NA=anchors.length, INF=1e9;
+    const f=[...Array(NL+1)].map(()=>Array(NA+1).fill(INF)), bk=[...Array(NL+1)].map(()=>Array(NA+1).fill(null));
+    for(let j=0;j<=NA;j++) f[0][j]=25*j;
+    for(let i=1;i<=NL;i++) for(let j=0;j<=NA;j++){
+      if(f[i-1][j]+30<f[i][j]){f[i][j]=f[i-1][j]+30;bk[i][j]=['skip'];}
+      if(j>0){ if(f[i][j-1]+25<f[i][j]){f[i][j]=f[i][j-1]+25;bk[i][j]=['none'];}
+        for(let k=i-1;k>=0;k--){ if(k<i-1&&ln4[k].y-ln4[k+1].y>13) break;
+          const yc=(ln4[k].y+ln4[i-1].y)/2, dd=Math.abs(yc-anchors[j-1].y), c=f[k][j-1]+(dd<6?dd*2:dd*6);
+          if(c<f[i][j]){f[i][j]=c;bk[i][j]=['grp',k];} } }
+    }
+    const why4=Array(NA).fill('');
+    for(let i=NL,j=NA;i>0||j>0;){const b=bk[i][j]; if(!b){ if(j>0){j--;continue;} break;}
+      if(b[0]==='skip') i--; else if(b[0]==='none') j--; else {why4[j-1]=ln4.slice(b[1],i).map(l=>l.s).join(' ');i=b[1];j--;}}
+    anchors.forEach((a,i)=>{
+      const top=i>0?(anchors[i-1].y+a.y)/2:a.y+14, bot=i<anchors.length-1?(anchors[i+1].y+a.y)/2:a.y-14;
+      let tp=top,bt=bot; walls.forEach(w=>{ if(w>a.y+1&&w<tp) tp=w; if(w<a.y-1&&w>bt) bt=w; });
+      const band=its.filter(t=>t.y<tp&&t.y>bt&&t.w<=150&&!(KM.test(t.s)&&Math.abs(t.y-a.y)<2));
+      const col=n=>band.filter(t=>colOf(ctr(t))===n);
+      const txt=n=>{let s='',prev=null;col(n).sort((p,q)=>q.y-p.y||p.x-q.x).forEach(t=>{
+          if(prev&&Math.abs(prev.y-t.y)<2&&t.x-(prev.x+prev.w)<1.5) s+=t.s; else s+=(s?' ':'')+t.s; prev=t;});return s.replace(/\s+/g,' ').trim();};
+      const sp=n=>{const it=band.filter(t=>colOf(ctr(t))===n&&Math.abs(t.y-a.y)<3);const v=it.map(t=>t.s).join('');return /^\d+$/.test(v)?+v:null;};
+      const uw=txt(8);
+      const why=(why4[i]||'').replace(/prowi zoryczna/g,'prowizoryczna').replace(/^-$/,'');
+      const lm=uw.match(/Linia\s*(\d+)/);
+      const line=lm?lm[1]:secAt(a.y);
+      let station=''; let bd=1e9; st.forEach(g=>{const d=Math.abs(g.yc-a.y); if(d<bd&&d<60){bd=d;station=g.s;}});
+      out.push({line,f:a.f,t:a.t,why,tor:txt(5).replace(/\s*,\s*/g,', ').replace(/,$/,''),
+        odd:sp(6),even:sp(7),uw,star:/\*\)/.test(uw)?1:0,nowe:/Nowe/i.test(uw)?1:0,vd:/Vd\)/.test(uw)?1:0,st:station,page:pi+1});
+    });
+    if(marks.length) section=marks[marks.length-1].line;
+  });
+  // rekordy dla żądanej linii, bez duplikatów
+  const seen=new Set(), R=[];
+  let lastSt='';
+  out.filter(r=>r.line===LINE).forEach(r=>{
+    if(r.st) lastSt=r.st; else r.st=lastSt;
+    const k=[r.f,r.t,r.tor,r.odd,r.even].join('|'); if(seen.has(k)){const o=R.find(x=>x.k===k); if(o&&r.why&&!o.why.includes(r.why)) o.why+='; '+r.why; if(r.nowe&&o) o.nowe=1; return;} seen.add(k);
+    R.push({k,f:r.f,t:r.t,tor:r.tor||'?',odd:r.odd,even:r.even,why:r.why||(r.vd?'Prędkość drogowa (Vd)':''),st:r.st,
+      ...(r.star?{star:1}:{}),...(r.nowe?{nowe:1}:{}),...(r.vd?{vd:1}:{})});
+  });
+  // akapit o klasie obciążenia (np. D4)
+  const para=(sectionText[LINE]||[]).join(' ');
+  const pm=para.match(/klasy obciążenia\s+(\w+)[^]*?do\s+(\d+)\s*km\/h/);
+  if(pm){ const re=/od\s*km\s*(-?\d+,\d{3})\s*do\s*(-?\d+,\d{3})/g; let m;
+    while((m=re.exec(para))) R.push({f:num(m[1]),t:num(m[2]),tor:'wsz.',odd:+pm[2],even:+pm[2],why:'Obiekt inżynieryjny – tylko pociągi klasy obciążenia '+pm[1],st:'',d4:1}); }
+  R.forEach(r=>delete r.k);
+  R.sort((a,b)=>a.f-b.f||String(a.tor).localeCompare(String(b.tor)));
+  const all=allText.join(' ');
+  const vm=all.match(/Ważny od dnia\s+(.+?)\s+do dnia\s+(.+?)\s*r\./);
+  const note=(sectionText['_p'+LINE]||[]).join(' ').replace(/\s+/g,' ').trim();
+  return {R, valid: vm?{from:vm[1],to:vm[2]}:null, note};
+}
+
+
+/* Prędkości drogowe na torach innych linii w stacjach węzłowych (kilometraż innej linii – pokazane przy stacji) */
+const VD = {
+ 'Gdynia Główna':['Tor 1, linia 201 km 204,700–204,851: parzysty 60 km/h'],
+ 'Rumia':['Tor 5, linia 228 km −0,500–0,330: 70 km/h w obu kierunkach'],
+ 'Reda':['Tor 3, linia 213 km −0,642–0,128: pas./szynobusy 70, towarowe 60 km/h'],
+ 'Lębork':['Tor 6, linia 229 km 100,997–101,517: 60 km/h w obu kierunkach'],
+ 'Słupsk':['Linia 405 km 174,899–174,902, tory 1, 3, 5, 7: 20/20 km/h – brak widoczności czoła pociągu na przejeździe']
+};
+
+const ANCHf=()=>LINES[LINE].anch;
+
+/* ===== Geometria ===== */
+const toRad=Math.PI/180;
+function xy(lat,lon,lat0){return [lon*111320*Math.cos(lat0*toRad), lat*110540];}
+function dist(a,b,c,d){const p=xy(a,b,a),q=xy(c,d,a);return Math.hypot(p[0]-q[0],p[1]-q[1]);}
+let PTS = [];        // [{k,lat,lon}] posortowane po km
+let WAYS = [];       // geometrie torów z OSM
+let mode = 'approx';
+
+function setPts(arr,m){PTS=arr.slice().sort((a,b)=>a.k-b.k);mode=m;}
+function kmToLL(k){
+  if(!PTS.length) return null;
+  if(k<=PTS[0].k) return [PTS[0].lat,PTS[0].lon];
+  if(k>=PTS[PTS.length-1].k) {const p=PTS[PTS.length-1];return [p.lat,p.lon];}
+  let lo=0,hi=PTS.length-1;
+  while(hi-lo>1){const m=(lo+hi)>>1; if(PTS[m].k<=k) lo=m; else hi=m;}
+  const a=PTS[lo],b=PTS[hi],t=(b.k===a.k)?0:(k-a.k)/(b.k-a.k);
+  return [a.lat+(b.lat-a.lat)*t, a.lon+(b.lon-a.lon)*t];
+}
+function llToKm(lat,lon){
+  let best=null;
+  const maxGap = mode==='osm'?1.5:15;
+  for(let i=0;i<PTS.length-1;i++){
+    const a=PTS[i],b=PTS[i+1];
+    if(b.k-a.k>maxGap) continue;
+    const A=xy(a.lat,a.lon,lat),B=xy(b.lat,b.lon,lat),P=xy(lat,lon,lat);
+    const vx=B[0]-A[0],vy=B[1]-A[1],L=vx*vx+vy*vy;
+    let t=L?((P[0]-A[0])*vx+(P[1]-A[1])*vy)/L:0; t=Math.max(0,Math.min(1,t));
+    const d=Math.hypot(P[0]-A[0]-t*vx,P[1]-A[1]-t*vy);
+    if(!best||d<best.d) best={d,k:a.k+(b.k-a.k)*t};
+  }
+  return best;
+}
+
+/* ===== Mapa ===== */
+const HASMAP=typeof window.L!=='undefined';
+if(!HASMAP){document.body.classList.add('nomap');document.getElementById('map').innerHTML='<div style="padding:24px;color:#e9eef3;font:15px/1.5 system-ui"><b style="font-size:18px">Mapa się nie załadowała</b><br>Ten podgląd blokuje mapę i GPS. Otwórz aplikację w Safari lub Chrome z adresu https:// (instrukcja w czacie). Lista ostrzeżeń poniżej działa.</div>';}
+const map=HASMAP?L.map('map',{zoomControl:true}).setView([54.5,17.8],9):null;
+if(HASMAP){
+const esriT=n=>L.tileLayer(`https://server.arcgisonline.com/ArcGIS/rest/services/${n}/MapServer/tile/{z}/{y}/{x}`,{maxZoom:19,attribution:'© Esri, HERE, Garmin, OpenStreetMap'});
+window._osm=esriT('World_Street_Map').addTo(map);
+const sat=esriT('World_Imagery'), topo=esriT('World_Topo_Map');
+const osmL=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
+L.control.layers({'Mapa':window._osm,'Satelita':sat,'Topograficzna':topo,'OpenStreetMap (tylko z hostingu https)':osmL},{},{position:'topright'}).addTo(map);
+}
+if(HASMAP){const zf=()=>map.getContainer().classList.toggle('far',map.getZoom()<11);map.on('zoomend',zf);zf();}
+const lineLayer=HASMAP?L.layerGroup().addTo(map):null, rLayer=HASMAP?L.layerGroup().addTo(map):null, stLayer=HASMAP?L.layerGroup().addTo(map):null;
+let meMarker=null, accCircle=null;
+
+const fmtKm=k=>k.toFixed(3).replace('.',',');
+const colR=(r,v)=>r.roz?getVar('--roz'):col(v);
+const col=v=>v==null?'#888':v<=20?getVar('--v20'):v<=40?getVar('--v40'):v<=60?getVar('--v60'):getVar('--v90');
+function getVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+const gUrl=(lat,lon)=>`https://www.google.com/maps/search/?api=1&query=${lat.toFixed(6)},${lon.toFixed(6)}`;
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtDT=ts=>new Date(ts).toLocaleString('pl-PL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+let geoMsg=null;
+function showSrc(){ if(!geoMsg) return; setStatus(`${geoMsg} Linia ${LINE} · wykaz: ${WOS.name}${WOS.valid?' – ważny do '+WOS.valid.to:''}${R.some(r=>r.roz)?` · rozkazy: ${R.filter(r=>r.roz).length}`:''}`); }
+const spd=r=>`${r.odd??'–'} / ${r.even??'–'}`;
+
+function popupHtml(r){
+  const c=kmToLL((r.f+r.t)/2);
+  return `<b>${esc(r.st||'')}</b><br>km <b>${fmtKm(r.f)} – ${fmtKm(r.t)}</b>, tor ${r.tor}<br>
+  Prędkość: nieparz. <b>${r.odd??'–'}</b> / parz. <b>${r.even??'–'}</b> km/h<br>${esc(r.why||'')}
+  ${r.roz?`<br><b style="color:#a855f7">Rozkaz pisemny${r.nr?' nr '+esc(r.nr):''}</b>${r.until?' – ważny do '+fmtDT(r.until):''}`:''}
+  ${r.star?'<br><i>*) nieujęte w czasach jazdy</i>':''}${r.d4?'<br><i>Dotyczy tylko klasy D4</i>':''}
+  <br><a href="${gUrl(c[0],c[1])}" target="_blank" rel="noopener">Otwórz w Google Maps ↗</a>`;
+}
+
+function drawAll(){
+  if(!HASMAP) return;
+  lineLayer.clearLayers(); rLayer.clearLayers(); stLayer.clearLayers();
+  if(WAYS.length) WAYS.forEach(g=>L.polyline(g,{color:'#14181d',weight:3,opacity:.55}).addTo(lineLayer));
+  else L.polyline(ANCHf().map(a=>[a[1],a[2]]),{color:'#14181d',weight:3,opacity:.5,dashArray:'6 6'}).addTo(lineLayer);
+  // kilometrowanie co 5 km
+  {const Lc=LINES[LINE];for(let k=Math.ceil(Math.max(0,Lc.kmMin)/Lc.step)*Lc.step;k<=Lc.kmMax;k+=Lc.step){const p=kmToLL(k);if(p) L.marker(p,{icon:L.divIcon({className:'',html:`<span class="km-lbl">${k}</span>`,iconSize:null}),interactive:false}).addTo(lineLayer);}}
+  R.forEach(r=>{
+    const v=Math.min(r.odd??999,r.even??999), c=colR(r,v===999?null:v);
+    const pts=[];const len=Math.max(r.t-r.f,0.01);
+    for(let k=r.f;k<=r.t+1e-9;k+=Math.max(len/10,0.005)) pts.push(kmToLL(k));
+    pts.push(kmToLL(r.t));
+    const info=r.odd==null&&r.even==null;
+    L.polyline(pts,info?{color:'#7a8796',weight:4,opacity:.8,dashArray:'4 8'}:{color:c,weight:9,opacity:.9}).bindPopup(()=>popupHtml(r)).addTo(rLayer);
+    if(info) return;
+    const same=r.odd===r.even, sv=same?r.odd:`↑${r.odd??'–'}<br>↓${r.even??'–'}`;
+    const ic=L.divIcon({className:'',iconSize:[60,60],iconAnchor:[30,22],
+      html:`<div class="rs"><div class="c${same?'':' two'}" style="border-color:${c}">${sv}</div><div class="tl">${r.roz?'ROZKAZ · ':''}${r.d4?'D4':'tor '+r.tor}</div></div>`});
+    L.marker(kmToLL(r.f),{icon:ic,zIndexOffset:500-(v===999?0:v)}).bindPopup(()=>popupHtml(r)).addTo(rLayer);
+  });
+  if(LINE==='202') ANCHf().forEach(a=>{
+    if(!VD[a[3]]) return;
+    const p= mode==='osm'? kmToLL(a[0]) : [a[1],a[2]];
+    L.circleMarker(p,{radius:6,color:'#14181d',weight:2,fillColor:'#fff',fillOpacity:1})
+     .bindPopup(`<b>${a[3]}</b> – prędkości drogowe (Vd)<br>${VD[a[3]].join('<br>')}<br><a href="${gUrl(p[0],p[1])}" target="_blank" rel="noopener">Google Maps ↗</a>`).addTo(stLayer);
+  });
+}
+
+/* ===== Pobranie geometrii z OpenStreetMap (słupki kilometrowe linii 202) ===== */
+const geoKey=()=>LINE==='202'?'l202-geo-v1':`geo-${LINE}-v1`;
+const Qf=()=>`[out:json][timeout:120];
+relation["type"="route"]["route"="railway"]["ref"="${LINE}"](${LINES[LINE].box})->.r;
+way(r.r)->.w;
+node(w.w)["railway"="milestone"]->.m;
+.m out body;
+.w out geom;`;
+const EPS=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+
+function parseOsm(j){
+  const ms=[],ways=[];
+  for(const e of j.elements){
+    if(e.type==='node'&&e.tags){
+      let s=e.tags['railway:position:exact']||e.tags['railway:position']||'';
+      s=String(s).replace(',', '.').replace(/[^\d.\-]/g,'');
+      const k=parseFloat(s);
+      if(!isNaN(k)&&k>=LINES[LINE].kmMin&&k<=LINES[LINE].kmMax+0.5) ms.push({k,lat:e.lat,lon:e.lon});
+    } else if(e.type==='way'&&e.geometry){
+      const g=e.geometry.filter(p=>LINE!=='202'||p.lon>16.75).map(p=>[p.lat,p.lon]);
+      if(g.length>1) ways.push(g);
+    }
+  }
+  return {ms,ways};
+}
+function setStatus(t,w){const s=document.getElementById('status');s.textContent=t;s.className=w?'warn':'';}
+
+let geoTok=0;
+async function loadGeo(force){
+  const tok=++geoTok, ln=LINE; WAYS=[]; geoMsg=null;
+  if(!force){try{const c=JSON.parse(localStorage.getItem(geoKey())||'null');if(c&&c.ms.length>15){applyGeo(c,'pamięć urządzenia');return;}}catch(e){}}
+  setPts(ANCHf().map(a=>({k:a[0],lat:a[1],lon:a[2]})),'approx'); drawAll(); renderList();
+  for(const ep of EPS){
+    try{
+      setStatus(`Pobieram słupki kilometrowe linii ${ln} z OpenStreetMap…`);
+      const res=await fetch(ep,{method:'POST',body:'data='+encodeURIComponent(Qf())});
+      if(tok!==geoTok) return;
+      if(!res.ok) throw 0;
+      const d=parseOsm(await res.json());
+      if(tok!==geoTok) return;
+      if(d.ms.length<15) throw 0;
+      try{localStorage.setItem(geoKey(),JSON.stringify(d));}catch(e){}
+      applyGeo(d,'OpenStreetMap'); return;
+    }catch(e){}
+  }
+  if(tok!==geoTok) return;
+  geoMsg=null;
+  setStatus('⚠ Brak danych OSM – tryb PRZYBLIŻONY (km z dokładnością ok. ±0,5–1 km). Połącz z internetem i odśwież.',true);
+}
+function applyGeo(d,src){
+  WAYS=d.ways; setPts(d.ms,'osm'); drawAll(); renderList();
+  geoMsg=`Geometria: ${d.ms.length} słupków km (${src}).`; showSrc();
+}
+
+/* ===== Stan jazdy ===== */
+let cur=null;          // {k, off, lat, lon, speed, acc}
+let autoDir=0, refKm=null, alerted=new Set(), follow=true, sound=true, watchId=null, wake=null;
+const dirSel=document.getElementById('dirSel'), torSel=document.getElementById('torSel');
+
+function dir(){return dirSel.value==='auto'?autoDir:+dirSel.value;}
+function torOk(r){const t=torSel.value;if(t==='all')return true;return r.tor.split(/[ ,]+/).includes(t)||r.tor==='wsz.';}
+
+function ahead(){
+  if(!cur) return [];
+  const k=cur.k,d=dir(),out=[];
+  R.forEach(r=>{
+    if(!torOk(r)) return;
+    const dirs=d?[d]:[1,-1];
+    for(const dd of dirs){
+      const v=dd>0?r.odd:r.even; if(v==null) continue;
+      let m;
+      if(dd>0){ if(r.t<k) continue; m=Math.max(0,r.f-k);} else { if(r.f>k) continue; m=Math.max(0,k-r.t);}
+      out.push({r,v,m,dd}); break;
+    }
+  });
+  return out.sort((a,b)=>a.m-b.m);
+}
+
+function renderList(){
+  const L_=document.getElementById('list');
+  const up=ahead(); const upIds=new Set(up.map(x=>x.r.id));
+  let rows;
+  if(cur){ rows=[...up.map(x=>({...x,past:false})), ...R.filter(r=>torOk(r)&&!upIds.has(r.id)).map(r=>({r,v:Math.min(r.odd??999,r.even??999),m:null,past:true}))]; }
+  else rows=R.filter(torOk).sort((a,b)=>(a.d4?1:0)-(b.d4?1:0)).map(r=>({r,v:Math.min(r.odd??999,r.even??999),m:null}));
+  L_.innerHTML='';
+  rows.forEach(x=>{
+    const r=x.r,div=document.createElement('div');
+    div.className='row'+(x.past?' past':'');
+    const dTxt=x.m==null?'':x.m===0?'TU':(x.m<1?Math.round(x.m*1000)+' m':x.m.toFixed(1).replace('.',',')+' km');
+    const same=r.odd===r.even||x.m!=null, vv=x.m!=null?x.v:r.odd;
+    const sv=same?(vv??'–'):`↑${r.odd??'–'}<br>↓${r.even??'–'}`;
+    div.innerHTML=`<div class="v${same?'':' two'}" style="border-color:${colR(r,x.v===999?null:x.v)}">${sv}</div>
+      <div class="trk"><small>TOR</small>${r.tor==='wsz.'?'1, 2':esc(r.tor)}</div>
+      <div class="t"><b>km ${fmtKm(r.f)}–${fmtKm(r.t)}</b>${r.roz?'<span class="tag roz">ROZKAZ</span>':''}${r.vd?'<span class="tag">Vd</span>':''}${r.nowe?'<span class="tag">Nowe</span>':''}${r.d4?'<span class="tag">D4</span>':''}
+      <span class="desc">${esc([r.st,r.why].filter(Boolean).join(' · '))}</span></div><div class="d">${dTxt}</div>`;
+    div.onclick=()=>{if(!HASMAP)return;follow=false;setFollow();const a=kmToLL(r.f),b=kmToLL(r.t);map.fitBounds([a,b],{maxZoom:16,padding:[40,40]});L.popup().setLatLng(kmToLL((r.f+r.t)/2)).setContent(popupHtml(r)).openOn(map);};
+    L_.appendChild(div);
+  });
+}
+
+function renderNext(){
+  const box=document.getElementById('next'),sign=document.getElementById('nSign'),tx=document.getElementById('nextTxt');
+  box.classList.remove('inside','near');
+  if(!cur){return;}
+  if(cur.off>(mode==='osm'?300:3000)){
+    sign.textContent='?';sign.style.borderColor='#888';
+    tx.innerHTML=`<div class="big">Poza linią 202</div><div class="sub">${Math.round(cur.off)} m od toru</div>`;return;
+  }
+  const up=ahead();
+  const inside=up.filter(x=>x.m===0);
+  if(inside.length){
+    const x=inside.reduce((a,b)=>a.v<=b.v?a:b);
+    box.classList.add('inside');sign.textContent=x.v;sign.style.borderColor=col(x.v);
+    tx.innerHTML=`<div class="big">W OGRANICZENIU: ${x.v} km/h</div><div class="sub">do km ${fmtKm(x.dd>0?x.r.t:x.r.f)} · tor ${x.r.tor} · ${x.r.why}</div>`;
+  } else if(up.length){
+    const x=up[0];
+    if(x.m<1.5) box.classList.add('near');
+    sign.textContent=x.v;sign.style.borderColor=col(x.v);
+    const m=x.m<1?Math.round(x.m*1000)+' m':x.m.toFixed(2).replace('.',',')+' km';
+    tx.innerHTML=`<div class="big">${x.v} km/h za ${m}</div><div class="sub">km ${fmtKm(x.r.f)}–${fmtKm(x.r.t)} · tor ${x.r.tor} · ${x.r.why}</div>`;
+  } else {
+    sign.textContent='✓';sign.style.borderColor=getVar('--ok');
+    tx.innerHTML=`<div class="big">Brak ostrzeżeń przed Tobą</div><div class="sub">do końca odcinka IZ Gdynia</div>`;
+  }
+  // alarm
+  const lim=1.0;
+  up.filter(x=>x.m<=lim).forEach(x=>{
+    const key=x.r.id+':'+x.dd;
+    if(!alerted.has(key)){alerted.add(key);alarm();}
+  });
+}
+
+let actx=null;
+function alarm(){
+  const box=document.getElementById('next');box.classList.remove('alarm');void box.offsetWidth;box.classList.add('alarm');
+  try{navigator.vibrate&&navigator.vibrate([300,150,300]);}catch(e){}
+  if(!sound) return;
+  try{
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    [0,0.35,0.7].forEach(t=>{const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;o.connect(g);g.connect(actx.destination);
+      g.gain.setValueAtTime(.3,actx.currentTime+t);g.gain.setValueAtTime(0,actx.currentTime+t+.22);o.start(actx.currentTime+t);o.stop(actx.currentTime+t+.25);});
+  }catch(e){}
+}
+
+function update(lat,lon,speed,acc){
+  const b=llToKm(lat,lon); if(!b) return;
+  cur={k:b.k,off:b.d,lat,lon,speed,acc};
+  if(refKm==null) refKm=b.k;
+  if(Math.abs(b.k-refKm)>=0.05){autoDir=b.k>refKm?1:-1;refKm=b.k;}
+  // reset alarmów, gdy zmieni się kierunek
+  document.getElementById('hKm').textContent=fmtKm(b.k);
+  document.getElementById('hSp').textContent=speed!=null&&!isNaN(speed)?Math.round(speed*3.6)+' km/h':'—';
+  document.getElementById('hOff').textContent=Math.round(b.d)+' m';
+  if(HASMAP){
+  if(!meMarker){meMarker=L.marker([lat,lon],{icon:L.divIcon({className:'',html:'<div class="me"></div>',iconSize:[20,20],iconAnchor:[10,10]}),zIndexOffset:1000}).addTo(map);}
+  else meMarker.setLatLng([lat,lon]);
+  if(acc){ if(!accCircle) accCircle=L.circle([lat,lon],{radius:acc,weight:1,color:'#2a7bf6',fillOpacity:.08}).addTo(map); else accCircle.setLatLng([lat,lon]).setRadius(acc);}
+  if(follow) map.setView([lat,lon],Math.max(map.getZoom(),14),{animate:true});
+  }
+  renderNext(); renderList();
+}
+
+/* ===== GPS ===== */
+const gpsBtn=document.getElementById('gpsBtn');
+gpsBtn.onclick=async()=>{
+  if(watchId!=null){navigator.geolocation.clearWatch(watchId);watchId=null;gpsBtn.textContent='▶ Start GPS';gpsBtn.classList.remove('on');try{wake&&wake.release();}catch(e){}return;}
+  if(!navigator.geolocation){setStatus('Ta przeglądarka nie obsługuje GPS.',true);return;}
+  try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();actx.resume();}catch(e){}
+  try{wake=await navigator.wakeLock.request('screen');}catch(e){}
+  gpsBtn.textContent='■ Stop GPS';gpsBtn.classList.add('on');follow=true;setFollow();
+  watchId=navigator.geolocation.watchPosition(
+    p=>update(p.coords.latitude,p.coords.longitude,p.coords.speed,p.coords.accuracy),
+    e=>setStatus('GPS: '+(e.code===1?'brak zgody na lokalizację – zezwól w ustawieniach przeglądarki':e.message),true),
+    {enableHighAccuracy:true,maximumAge:1000,timeout:20000});
+};
+document.addEventListener('visibilitychange',async()=>{if(watchId!=null&&document.visibilityState==='visible'){try{wake=await navigator.wakeLock.request('screen');}catch(e){}}});
+
+if(HASMAP){map.on('click',e=>{ if(watchId==null){follow=false;setFollow();update(e.latlng.lat,e.latlng.lng,null,null);} });
+map.on('dragstart',()=>{follow=false;setFollow();});}
+
+const sndBtn=document.getElementById('sndBtn');
+sndBtn.onclick=()=>{sound=!sound;sndBtn.classList.toggle('on',sound);sndBtn.setAttribute('aria-pressed',sound);sndBtn.textContent=sound?'🔔 Alarm':'🔕 Cisza';};
+const followBtn=document.getElementById('followBtn');
+function setFollow(){followBtn.classList.toggle('on',follow);}
+followBtn.onclick=()=>{follow=!follow;setFollow();if(follow&&cur&&HASMAP)map.setView([cur.lat,cur.lon],15);};
+dirSel.onchange=()=>{alerted.clear();renderNext();renderList();};
+torSel.onchange=()=>{renderNext();renderList();};
+
+// zmiana wysokości panelu
+const sizes=['46%','70%','24%'];let si=0;
+document.getElementById('resize').onclick=()=>{si=(si+1)%sizes.length;document.documentElement.style.setProperty('--ph',sizes[si]);setTimeout(()=>map&&map.invalidateSize(),50);};
+document.getElementById('status').ondblclick=()=>loadGeo(true);
+
+/* ===== Wczytywanie nowego wykazu z PDF ===== */
+const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+async function loadPdfJs(){
+  if(window.pdfjsLib) return window.pdfjsLib;
+  await new Promise((res,rej)=>{const sc=document.createElement('script');sc.src=PDFJS+'pdf.min.js';sc.onload=res;sc.onerror=()=>rej(new Error('Nie udało się pobrać czytnika PDF. Sprawdź połączenie z internetem.'));document.head.appendChild(sc);});
+  const lib=window.pdfjsLib;
+  try{lib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([`importScripts("${PDFJS}pdf.worker.min.js")`],{type:'text/javascript'}));}
+  catch(e){lib.GlobalWorkerOptions.workerSrc=PDFJS+'pdf.worker.min.js';}
+  return lib;
+}
+async function readPdf(file){
+  const lib=await loadPdfJs();
+  const doc=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+  const pages=[];
+  for(let p=1;p<=doc.numPages;p++){
+    const tc=await (await doc.getPage(p)).getTextContent();
+    pages.push({items:tc.items.filter(i=>i.str&&i.str.trim()).map(i=>({s:i.str,x:i.transform[4],y:i.transform[5],w:i.width}))});
+  }
+  return pages;
+}
+const keyOf=r=>[r.f,r.t,r.tor].join('|');
+const vTxt=r=>r.odd==null&&r.even==null?'informacja':r.odd===r.even?`${r.odd??'–'} km/h`:`↑${r.odd??'–'} ↓${r.even??'–'} km/h`;
+function diffWos(oldR,newR){
+  const om=new Map(oldR.map(r=>[keyOf(r),r])), nm=new Map(newR.map(r=>[keyOf(r),r]));
+  const add=[],del=[],chg=[];
+  newR.forEach(r=>{const o=om.get(keyOf(r)); if(!o) add.push(r); else if(o.odd!==r.odd||o.even!==r.even) chg.push([o,r]);});
+  oldR.forEach(r=>{if(!nm.has(keyOf(r))) del.push(r);});
+  return {add,del,chg};
+}
+let pendingWos=null;
+const $=id=>document.getElementById(id);
+function openWos(){
+  $('wosInfo').innerHTML=`Teraz: <b>${esc(WOS.name)}</b>${WOS.valid?`, ważny od ${esc(WOS.valid.from)} do ${esc(WOS.valid.to)}`:''} · linia 202: ${(WOS.lines['202']||[]).length}, linia 250: ${(WOS.lines['250']||[]).length} pozycji${WOS.loaded?` · wczytany ${fmtDT(WOS.loaded)}`:''}`;
+  $('wosMsg').textContent='';$('wosDiff').innerHTML='';$('wosApplyBar').hidden=true;pendingWos=null;
+  $('wosDlg').hidden=false;
+}
+$('wosBtn').onclick=openWos;
+$('wosClose').onclick=$('wosCancel').onclick=()=>{$('wosDlg').hidden=true;};
+$('wosPick').onclick=()=>{$('wosFile').value='';$('wosFile').click();};
+$('wosFile').onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const msg=$('wosMsg'); msg.className=''; msg.textContent='Czytam PDF…'; $('wosDiff').innerHTML=''; $('wosApplyBar').hidden=true;
+  try{
+    const pages=await readPdf(f);
+    const lines={},notes={};let valid=null;
+    Object.keys(LINES).forEach(l=>{const r=parseWos(pages,l);lines[l]=r.R;notes[l]=r.note;valid=valid||r.valid;});
+    if(!Object.values(lines).some(a=>a.length)) throw new Error('W tym pliku nie znalazłem ostrzeżeń dla linii 202 ani 250. Czy to Dodatek 2 dla IZ Gdynia?');
+    const res={valid};
+    const name=f.name.replace(/\.pdf$/i,'').replace(/_/g,' ');
+    const pm=name.match(/popr\.?\s*(\d+)/i);
+    pendingWos={name:pm?`Dodatek 2, popr. ${pm[1]}`:name,valid:res.valid,lines,notes,loaded:Date.now()};
+    const dl=Object.keys(LINES).map(l=>({l,d:diffWos((WOS.lines[l]||[]),lines[l]),n:lines[l].length}));
+    msg.innerHTML=`Odczytano${res.valid?` wykaz ważny do <b>${esc(res.valid.to)}</b>`:''}:<br>`+dl.map(({l,d,n})=>`Linia ${l}: <b>${n}</b> pozycji – <b>${d.add.length}</b> nowych, <b>${d.del.length}</b> zniesionych, <b>${d.chg.length}</b> ze zmienioną prędkością`).join('<br>');
+    const line=r=>`km ${fmtKm(r.f)}–${fmtKm(r.t)}, tor ${esc(r.tor)}: ${vTxt(r)} – ${esc(r.why||'')}`;
+    $('wosDiff').innerHTML=dl.map(({l,d})=>[...d.add.map(r=>`<div class="add">+ L${l} ${line(r)}</div>`),...d.chg.map(([o,r])=>`<div class="chg">L${l} ${line(r)} (było ${vTxt(o)})</div>`),...d.del.map(r=>`<div class="del">L${l} ${line(r)}</div>`)].join('')).join('')||'<div>Brak zmian względem obecnego wykazu.</div>';
+    $('wosApplyBar').hidden=false;
+  }catch(err){msg.className='err';msg.textContent=err.message||'Nie udało się odczytać pliku.';}
+};
+function applyWos(w){WOS=w; if(w===BUILTIN){try{localStorage.removeItem(WOS_KEY);}catch(e){}} else saveLS(WOS_KEY,w); refreshAll();}
+$('wosApply').onclick=()=>{if(pendingWos){applyWos(pendingWos);$('wosDlg').hidden=true;}};
+$('wosReset').onclick=()=>{applyWos(BUILTIN);openWos();$('wosMsg').textContent='Przywrócono wykaz wbudowany (popr. 7).';};
+
+function refreshAll(){rebuild();if(typeof setupLine==='function')setupLine();alerted.clear();drawAll();renderNext();renderList();showSrc();}
+
+/* ===== Rozkaz pisemny – ostrzeżenia doraźne ===== */
+const parseKm=v=>{const x=parseFloat(String(v).trim().replace(/\s/g,'').replace(',','.'));return isNaN(x)?null:x;};
+function pad(n){return String(n).padStart(2,'0');}
+function dtLocal(ts){const d=new Date(ts);return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;}
+function renderRoz(){
+  $('rozList').innerHTML=ROZ.length?ROZ.map(x=>`<div><span><b>${vTxt(x)}</b> · L${x.line} · km ${fmtKm(x.f)}–${fmtKm(x.t)} · tor ${esc(x.tor)}${x.nr?' · '+esc(x.nr):''}<br><small style="color:var(--mute)">${esc(x.why||'')}${x.until?' · do '+fmtDT(x.until):''}</small></span><button data-del="${x.rid}" aria-label="Usuń">✕</button></div>`).join(''):'<p>Brak ostrzeżeń doraźnych.</p>';
+  $('rozList').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ROZ=ROZ.filter(x=>String(x.rid)!==b.dataset.del);saveLS(ROZ_KEY,ROZ);refreshAll();renderRoz();});
+}
+$('rozBtn').onclick=()=>{
+  if(!$('rUntil').value) $('rUntil').value=dtLocal(Date.now()+12*3600e3);
+  $('rozErr').textContent='';renderRoz();resetClear();$('rozDlg').hidden=false;
+};
+$('rozClose').onclick=()=>{$('rozDlg').hidden=true;};
+$('rozHere').onclick=()=>{ if(cur){$('rF').value=fmtKm(cur.k);} else $('rozErr').textContent='Najpierw włącz GPS albo dotknij mapy.'; };
+$('rozForm').onsubmit=e=>{
+  e.preventDefault();
+  let f=parseKm($('rF').value),t=parseKm($('rT').value);const v=parseInt($('rV').value,10),tor=$('rTor').value.trim();
+  if(f==null||t==null){$('rozErr').textContent='Wpisz kilometr początku i końca, np. 88,350.';return;}
+  if(!(v>0&&v<=160)){$('rozErr').textContent='Wpisz prędkość w km/h, np. 30.';return;}
+  if(!tor){$('rozErr').textContent='Wpisz numer toru.';return;}
+  if(f>t)[f,t]=[t,f];
+  const dir=$('rDir').value, u=$('rUntil').value?new Date($('rUntil').value).getTime():null;
+  ROZ.push({rid:Date.now(),line:LINE,f,t,tor,odd:dir==='even'?null:v,even:dir==='odd'?null:v,why:$('rWhy').value.trim()||'Ostrzeżenie doraźne',nr:$('rNr').value.trim(),until:u,st:'Rozkaz pisemny'});
+  saveLS(ROZ_KEY,ROZ);refreshAll();renderRoz();
+  ['rF','rT','rV','rWhy'].forEach(id=>$(id).value='');$('rozErr').textContent='';$('rF').focus();
+};
+let clearArm=null;
+function resetClear(){clearArm=null;$('rozClear').textContent='Koniec służby – usuń wszystkie';}
+$('rozClear').onclick=()=>{
+  if(!ROZ.length) return;
+  if(!clearArm){clearArm=setTimeout(resetClear,4000);$('rozClear').textContent='Na pewno? Dotknij ponownie';return;}
+  clearTimeout(clearArm);ROZ=[];saveLS(ROZ_KEY,ROZ);refreshAll();renderRoz();resetClear();
+};
+setInterval(()=>{const n=ROZ.length;rebuild();if(ROZ.length!==n){saveLS(ROZ_KEY,ROZ);refreshAll();}},60000);
+
+/* ===== Rozkaz ze zdjęć (OCR na telefonie) ===== */
+function parseRozkaz(text, defLine){
+  const KMRE=/-?\d{1,3}[,.]\s?\d{3}/g;
+  const lines=text.split(/\r?\n/).map(l=>l.replace(/[|\[\]{}]/g,' ').replace(/\s+/g,' ').trim()).filter(Boolean);
+  const nrM=text.match(/Rozkaz\s+\S*\s*nr\s+([A-Z0-9][\w\-\/]+)/i);
+  const items=[];let curI=null;
+  const lc={}; for(const m of text.matchAll(/\b[LlI1|][.\-,:]\s?(\d{3})\b|linii kolejowej nr\s?(\d{3})/g)){const k=m[1]||m[2];lc[k]=(lc[k]||0)+1;}
+  const freq=Object.entries(lc).sort((a,b)=>b[1]-a[1]); if(freq.length) defLine=freq[0][0];
+  const STOP=/Rozkaz wystawiono|podpis dor|System SERWO|^Strona\s/i;
+  for(let i=0;i<lines.length;i++){
+    const l=lines[i];
+    if(STOP.test(l)){curI=null;continue;}
+    const kms=[...l.matchAll(KMRE)];
+    const km2=kms.length>=2&&!/od dnia|godz\./i.test(l.slice(0,kms[0].index));
+    if(km2){
+      const a=kms[kms.length-2], b=kms[kms.length-1];
+      const num=s=>parseFloat(s.replace(/\s/g,'').replace(',','.'));
+      let head=l.slice(0,a.index).trim(), tail=l.slice(b.index+b[0].length).trim();
+      const sp=tail.match(/^\D{0,3}(\d{1,3})\b/); let v=sp?+sp[1]:null; if(v!=null&&(v<5||v>160)) v=null;
+      head=head.replace(/^\W*\d{1,2}\s+(?=[A-ZĄĆĘŁŃÓŚŹŻ])/,'');
+      // tory na końcu nagłówka (np. "501, 502", "501 I 502", "5011502")
+      head=head.replace(/(\d{3})\s?[1Il|]\s?(\d{3})\b/g,'$1, $2');
+      const tm=head.match(/((?:\b\d{1,3}[a-z]?\b(?:\s*(?:,|i|I|oraz)\s*)?)+)\s*$/);
+      let tor=tm?tm[1].replace(/\s*(?:,|\bi\b|\bI\b|oraz)\s*/g,', ').replace(/[,\s]+$/,'').replace(/\s+/g,', ').replace(/(,\s*)+/g,', '):'';
+      const st=(tm?head.slice(0,tm.index):head).replace(/[^\wĄĆĘŁŃÓŚŹŻąćęłńóśźż\-\. ]/g,'').trim();
+      let f=num(a[0]),t=num(b[0]); if(f>t)[f,t]=[t,f];
+      curI={line:defLine,tor,f,t,v,st,why:[],raw:l};
+      // numer linii z następnych 2 wierszy
+      for(let k=i;k<=Math.min(i+2,lines.length-1);k++){const m=lines[k].match(/(?:^|\s)[LlI1|]{1,2}\s?[.,:\-]?\s?(\d{3})\b/); if(m&&k>i||m&&k===i&&/L[.\-]\s?\d{3}/.test(lines[k])){curI.line=m[1];break;}}
+      items.push(curI); continue;
+    }
+    if(curI){
+      if(/^[LlI1|]{1,2}\s?[.,:]?\s?\d{3}\b/.test(l)){ const rest=l.replace(/^[LlI1|]{1,2}\s?[.,:]?\s?\d{3}\s*/,'').trim(); if(rest&&!/^[\w]*\d[\w\-]*-\d{2}(-s\d)?$/.test(rest)) curI.why.push(rest); continue;}
+      if(/^[\w]*\d[\w\-]*-\d{2}(-s\d)?$/.test(l)) continue;
+      if(curI.why.join(' ').length<140) curI.why.push(l);
+    }
+  }
+  return {nr:nrM?nrM[1]:'', items:items.map(x=>{let w=x.why.join(' ').split(/\s+/).filter(t=>!/\d\S*-\d{2}(-s\d)?$/.test(t)&&!/^[LlI1|][.\-]\d{3}$/.test(t)&&/[A-Za-zĄ-ż0-9]/.test(t));
+    while(w.length&&w[0].length===1) w.shift();
+    while(w.length&&w[0].length<=4&&/\d/.test(w[0])&&/[a-z]/i.test(w[0])) w.shift();
+    while(w.length&&w[w.length-1].length<=2) w.pop();
+    return {...x,why:w.join(' ').slice(0,160)};})};
+}
+
+
+const TESS='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+let tessWorker=null;
+async function getTess(onProg){
+  if(!window.Tesseract) await new Promise((res,rej)=>{const sc=document.createElement('script');sc.src=TESS;sc.onload=res;sc.onerror=()=>rej(new Error('Nie udało się pobrać modułu rozpoznawania tekstu. Sprawdź internet.'));document.head.appendChild(sc);});
+  if(!tessWorker){
+    tessWorker=await Tesseract.createWorker('pol',1,{logger:m=>onProg&&onProg(m)});
+    await tessWorker.setParameters({tessedit_pageseg_mode:'6',preserve_interword_spaces:'1'});
+  }
+  return tessWorker;
+}
+function prepImage(file){
+  return new Promise((res,rej)=>{
+    const img=new Image(); const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      const sc=Math.min(1,2400/Math.max(img.width,img.height));
+      const c=document.createElement('canvas');c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
+      const x=c.getContext('2d');x.drawImage(img,0,0,c.width,c.height);
+      const d=x.getImageData(0,0,c.width,c.height),a=d.data,h=new Array(256).fill(0);
+      for(let i=0;i<a.length;i+=4){const g=(a[i]*.299+a[i+1]*.587+a[i+2]*.114)|0;a[i]=g;h[g]++;}
+      const n=a.length/4;let lo=0,hi=255,acc=0;for(;lo<255;lo++){acc+=h[lo];if(acc>n*.01)break;}acc=0;for(;hi>0;hi--){acc+=h[hi];if(acc>n*.01)break;}
+      const k=255/Math.max(1,hi-lo);
+      for(let i=0;i<a.length;i+=4){const g=Math.max(0,Math.min(255,(a[i]-lo)*k));a[i]=a[i+1]=a[i+2]=g;}
+      x.putImageData(d,0,0); res({canvas:c,url});
+    };
+    img.onerror=()=>rej(new Error('Nie mogę otworzyć zdjęcia '+file.name));
+    img.src=url;
+  });
+}
+let ocrItems=[];
+$('rozPhoto').onclick=()=>{$('rozFiles').value='';$('rozFiles').click();};
+$('rozFiles').onchange=async e=>{
+  const files=[...e.target.files]; if(!files.length) return;
+  const msg=$('ocrMsg'); msg.className=''; $('ocrList').innerHTML=''; $('ocrBar').hidden=true;
+  let all='', thumbs=[];
+  try{
+    for(let i=0;i<files.length;i++){
+      const lbl=`Strona ${i+1}/${files.length}`;
+      msg.textContent=`${lbl}: przygotowuję…`;
+      const w=await getTess(m=>{ if(m.status==='recognizing text') msg.textContent=`${lbl}: rozpoznaję tekst ${Math.round(m.progress*100)}%`; else if(/load|initializ/.test(m.status)) msg.textContent=`Pierwsze uruchomienie: pobieram słownik polski… ${m.progress?Math.round(m.progress*100)+'%':''}`;});
+      const {canvas,url}=await prepImage(files[i]); thumbs.push(url);
+      const r=await w.recognize(canvas);
+      all+='\n'+r.data.text;
+    }
+    const res=parseRozkaz(all,LINE);
+    if(res.nr) $('rNr').value=res.nr;
+    ocrItems=res.items;
+    if(!ocrItems.length){msg.className='err';msg.textContent='Nie znalazłem w zdjęciach pozycji z kilometrami. Zrób zdjęcie prosto, ostro, całej tabeli – albo wpisz ręcznie.';return;}
+    msg.innerHTML=`<div class="thumbs">${thumbs.map(u=>`<img src="${u}" alt="strona rozkazu">`).join('')}</div>Rozpoznano <b>${ocrItems.length}</b> pozycji${res.nr?` z rozkazu <b>${esc(res.nr)}</b>`:''}. <b style="color:var(--v60)">Sprawdź każdą z kartką</b> – rozpoznawanie może pomylić cyfry. Puste pole prędkości = pozycja tylko informacyjna (bez alarmu).`;
+    msg.querySelectorAll('.thumbs img').forEach(im=>im.onclick=()=>im.classList.toggle('big'));
+    $('ocrList').innerHTML=ocrItems.map((x,i)=>{
+      const known=!!LINES[x.line];
+      return `<div class="oc${known?'':' off'}" data-i="${i}">
+        <label class="h"><input type="checkbox" class="oSel" ${known?'checked':''}> Poz. ${i+1}: ${esc(x.st||'')}</label>
+        ${known?'':`<div class="warn">Linia ${esc(x.line)} – aplikacja ma tylko 202 i 250.</div>`}
+        <div class="grid">
+          <label>Linia<select class="oL">${Object.keys(LINES).map(l=>`<option ${l===x.line?'selected':''}>${l}</option>`).join('')}</select></label>
+          <label>Tor<input class="oTor" value="${esc(x.tor)}"></label>
+          <label>Od km<input class="oF" inputmode="decimal" value="${fmtKm(x.f)}"></label>
+          <label>Do km<input class="oT" inputmode="decimal" value="${fmtKm(x.t)}"></label>
+          <label>Prędkość km/h<input class="oV" inputmode="numeric" value="${x.v??''}" placeholder="brak – informacja"></label>
+          <label>Kierunek<select class="oD"><option value="both">oba</option><option value="odd">nieparzysty</option><option value="even">parzysty</option></select></label>
+          <label class="full">Przyczyna<input class="oW" value="${esc(x.why||x.st||'')}"></label>
+        </div>
+        <small>Odczyt: ${esc(x.raw)}</small></div>`;}).join('');
+    $('ocrList').querySelectorAll('.oSel').forEach(c=>c.onchange=()=>c.closest('.oc').classList.toggle('off',!c.checked));
+    $('ocrBar').hidden=false;
+  }catch(err){msg.className='err';msg.textContent=err.message||'Nie udało się odczytać zdjęć.';}
+};
+$('ocrCancel').onclick=()=>{$('ocrList').innerHTML='';$('ocrMsg').textContent='';$('ocrBar').hidden=true;};
+$('ocrAdd').onclick=()=>{
+  const u=$('rUntil').value?new Date($('rUntil').value).getTime():Date.now()+12*3600e3;
+  let n=0,bad=0;
+  $('ocrList').querySelectorAll('.oc').forEach(card=>{
+    if(!card.querySelector('.oSel').checked) return;
+    const q=c=>card.querySelector(c).value.trim();
+    let f=parseKm(q('.oF')),t=parseKm(q('.oT'));const vv=q('.oV'),v=vv?parseInt(vv,10):null,dir=q('.oD');
+    if(f==null||t==null||(vv&&!(v>0&&v<=160))){bad++;card.style.borderLeftColor='var(--v20)';return;}
+    if(f>t)[f,t]=[t,f];
+    ROZ.push({rid:Date.now()+n,line:q('.oL'),f,t,tor:q('.oTor')||'?',odd:dir==='even'?null:v,even:dir==='odd'?null:v,why:q('.oW')||'Ostrzeżenie doraźne',nr:$('rNr').value.trim(),until:u,st:'Rozkaz pisemny'});
+    n++; card.remove();
+  });
+  saveLS(ROZ_KEY,ROZ);refreshAll();renderRoz();
+  $('ocrMsg').innerHTML=`Dodano <b>${n}</b> pozycji.`+(bad?` <span class="err">${bad} pozycji ma błędny km lub prędkość – popraw i dodaj ponownie.</span>`:'');
+  if(!$('ocrList').children.length) $('ocrBar').hidden=true;
+};
+
+/* ===== Wybór linii ===== */
+const lineSel=document.getElementById('lineSel');
+function setupLine(){
+  lineSel.value=LINE; const Lc=LINES[LINE];
+  document.getElementById('dirOdd').textContent=`↑ nieparzysty (km rośnie: ${Lc.odd})`;
+  document.getElementById('dirEven').textContent=`↓ parzysty (km maleje: ${Lc.even})`;
+  const tracks=new Set(); lineR(WOS).forEach(r=>String(r.tor).split(/[ ,]+/).forEach(t=>{if(t&&t!=='wsz.')tracks.add(t);}));
+  const prev=torSel.value;
+  torSel.innerHTML='<option value="all">Wszystkie tory</option>'+[...tracks].sort((a,b)=>parseFloat(a)-parseFloat(b)||a.localeCompare(b)).map(t=>`<option value="${esc(t)}">Tor ${esc(t)}</option>`).join('');
+  torSel.value=[...torSel.options].some(o=>o.value===prev)?prev:'all';
+  const n=WOS.notes&&WOS.notes[LINE], nb=document.getElementById('note');
+  nb.hidden=!n; if(n) nb.innerHTML='<b>Uwaga linii '+LINE+':</b> '+esc(n);
+}
+lineSel.onchange=()=>{
+  LINE=lineSel.value; try{localStorage.setItem('line',LINE);}catch(e){}
+  cur=null; refKm=null; autoDir=0; ['hKm','hSp','hOff'].forEach(id=>document.getElementById(id).textContent='—');
+  rebuild(); setupLine(); alerted.clear();
+  if(HASMAP){ const a=LINES[LINE].anch; map.fitBounds(a.map(x=>[x[1],x[2]]),{padding:[30,30]}); }
+  loadGeo(false); renderNext(); renderList();
+  if(watchId!=null && meMarker){const ll=meMarker.getLatLng(); update(ll.lat,ll.lng,null,null);}
+};
+setupLine();
+if(HASMAP) map.fitBounds(LINES[LINE].anch.map(x=>[x[1],x[2]]),{padding:[30,30]});
+
+loadGeo(false);
+</script>
+</body>
+</html>
