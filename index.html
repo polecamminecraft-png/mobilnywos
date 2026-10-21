@@ -1359,20 +1359,22 @@ $('ocrAdd').onclick=()=>{
 /* ===== Karta próby hamulca ===== */
 // Masa własna i hamująca EZT – załącznik do instrukcji SKM t-5 [t]: [masa, masa hamująca]
 const EZT=[
-  {id:'en57',nm:'EN57 (5B+6B+5B)',sh:'EN57',pr:[123,130],ld:[138,144]},
-  {id:'en71',nm:'EN71 (5B+6B+6B+5B)',sh:'EN71',pr:[178,164],ld:[198,225]},
-  {id:'en57-71',nm:'EN57/EN71',sh:'EN57/EN71',pr:[123,130],ld:[138,144]},
-  {id:'akm-mm',nm:'EN57AKM-MM',sh:'EN57AKM',pr:[125,135],ld:[138,162]},
-  {id:'en71ns',nm:'EN71-NS',sh:'EN71',pr:[178,224],ld:[197,257]},
-  {id:'akm-op',nm:'EN57AKM-OP',sh:'EN57AKM',pr:[124,135],ld:[138,162]},
-  {id:'31weg',nm:'31WEg',sh:'31WE',pr:[136,224],ld:[173,282]},
-  {id:'31webb',nm:'31WEbb',sh:'31WE',pr:[145,228],ld:[175,273]},
-  {id:'58we',nm:'58WE',sh:'58WE',pr:[162,250],ld:[197,296]}
+  // wy – % masy hamującej, który zostaje po wyłączeniu hamulca w zespole; len – długość [m]
+  {id:'en57',nm:'EN57 (5B+6B+5B)',sh:'EN57',pr:[123,130],ld:[138,144],wy:50,len:65},
+  {id:'en71',nm:'EN71 (5B+6B+6B+5B)',sh:'EN71',pr:[178,164],ld:[198,225],wy:65,len:87},
+  {id:'en57-71',nm:'EN57/EN71',sh:'EN57/EN71',pr:[123,130],ld:[138,144],wy:50,len:65},
+  {id:'akm-mm',nm:'EN57AKM-MM',sh:'EN57AKM',pr:[125,135],ld:[138,162],wy:50,len:65},
+  {id:'en71ns',nm:'EN71-NS',sh:'EN71',pr:[178,224],ld:[197,257],wy:65,len:87},
+  {id:'akm-op',nm:'EN57AKM-OP',sh:'EN57AKM',pr:[124,135],ld:[138,162],wy:50,len:65},
+  {id:'31weg',nm:'31WEg',sh:'31WE',pr:[136,224],ld:[173,282],wy:60,len:74},
+  {id:'31webb',nm:'31WEbb',sh:'31WE',pr:[145,228],ld:[175,273],wy:60,len:76},
+  {id:'58we',nm:'58WE',sh:'58WE',pr:[162,250],ld:[197,296],wy:60,len:79}
 ];
 const EZTbyId=id=>EZT.find(e=>e.id===id);
 // Składy do wyboru: każdy typ pojedynczo i podwójnie + para EN57 + EN71
 const SETS=[...EZT.flatMap(e=>[{id:e.id+'|1',nm:`${e.nm} – pojedynczy`,u:[e.id]},{id:e.id+'|2',nm:`${e.nm} – podwójny`,u:[e.id,e.id]}]),
-  {id:'para-57-71',nm:'EN57 + EN71 – para',u:['en57','en71']}];
+  {id:'para-57-71',nm:'EN57 + EN71 – para',u:['en57','en71']},
+  {id:'para-31webb-58we',nm:'31WEbb + 58WE – para',u:['31webb','58we']}];
 // Wymagany % masy hamującej wg relacji (od → do)
 const STAC=['Lębork','Wejherowo','Rumia','Gdynia Chylonia','Gdynia Cisowa','Gdańsk Śródmieście'];
 const PWREL={'Lębork>Gdańsk Śródmieście':100,'Gdańsk Śródmieście>Lębork':103,
@@ -1380,16 +1382,16 @@ const PWREL={'Lębork>Gdańsk Śródmieście':100,'Gdańsk Śródmieście>Lębor
   'Gdańsk Śródmieście>Gdynia Cisowa':103,'Gdynia Cisowa>Gdańsk Śródmieście':100,
   'Gdynia Chylonia>Gdańsk Śródmieście':100,
   'Rumia>Gdańsk Śródmieście':100,'Gdańsk Śródmieście>Rumia':103};
-let BK={card:{cols:[],st:'',dt:'',who:''},kind:'U',set:'akm-mm|2',load:'ld',nr:['',''],from:'Gdańsk Śródmieście',to:'Wejherowo',pw:103,pwMan:false,yes:{e17:true,e18:true,e19:true,e20:true},hist:[]};
+let BK={card:{cols:[],st:'',dt:'',who:''},off:[false,false],kind:'U',set:'akm-mm|2',load:'ld',nr:['',''],from:'Gdańsk Śródmieście',to:'Wejherowo',pw:103,pwMan:false,yes:{e17:true,e18:true,e19:true,e20:true},hist:[]};
 try{Object.assign(BK,JSON.parse(localStorage.getItem('brake2')||'{}'));}catch(e){}
 const bkSave=()=>saveLS('brake2',BK);
 const relPw=()=>PWREL[BK.from+'>'+BK.to];
 function bkCalc(){
   const set=SETS.find(x=>x.id===BK.set)||SETS[0];
-  let Mo=0,Mhr=0; set.u.forEach(id=>{const e=EZTbyId(id);const [m,mh]=e[BK.load];Mo+=m;Mhr+=mh;});
+  let Mo=0,Mhr=0,len=0; const det=set.u.map((id,i)=>{const e=EZTbyId(id);const [m,mh0]=e[BK.load];const off=!!(BK.off||[])[i];const mh=off?Math.floor(mh0*e.wy/100+1e-9):mh0;Mo+=m;Mhr+=mh;len+=e.len;return {e,m,mh0,mh,off};});
   const Pw=parseFloat(String(BK.pw).replace(',','.'))||0;
   const Mhw=Math.ceil(Mo*Pw/100-1e-9), Pr=Mo?Math.floor(Mhr*100/Mo+1e-9):0;
-  return {set,Mos:Mo,Mo,Mhw,Mhr,Pw,Pr,ok:Mo>0&&Pw>0&&Mhr>=Mhw};
+  return {set,det,len,Mos:Mo,Mo,Mhw,Mhr,Pw,Pr,ok:Mo>0&&Pw>0&&Mhr>=Mhw};
 }
 const YES=[['e17','17. Hamulec elektrodynamiczny'],['e18','18. Sterowanie el-pneum.'],['e19','19. Zamykanie drzwi'],['e20','20. Inne urządzenia']];
 function bkUnits(set){const parts=set.u.map((id,i)=>({sh:EZTbyId(id).sh,n:(BK.nr[i]||'').trim()})).filter(x=>x.n);if(!parts.length)return '';
@@ -1408,14 +1410,18 @@ function bkRender(){
   $('bkLoad').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.l===BK.load));
   $('bkSet').innerHTML=SETS.map(x=>`<option value="${x.id}" ${x.id===BK.set?'selected':''}>${esc(x.nm)}</option>`).join('');
   const set=SETS.find(x=>x.id===BK.set)||SETS[0];
-  $('bkNrs').innerHTML=set.u.map((id,i)=>`<label class="${set.u.length===1?'full':''}">Nr ${i+1}. zespołu (${esc(EZTbyId(id).sh)})<input data-nr="${i}" inputmode="numeric" placeholder="np. 1135" value="${esc(BK.nr[i]||'')}"></label>`).join('');
+  BK.off=BK.off||[false,false];
+  $('bkNrs').innerHTML=set.u.map((id,i)=>{const e=EZTbyId(id),off=!!BK.off[i];return `<div class="${set.u.length===1?'full':''}" style="display:flex;flex-direction:column;gap:6px;min-width:0${set.u.length===1?';grid-column:1/-1':''}">
+    <label>Nr ${i+1}. zespołu (${esc(e.sh)})<input data-nr="${i}" inputmode="numeric" placeholder="np. 1135" value="${esc(BK.nr[i]||'')}"></label>
+    <button data-off="${i}" class="${off?'danger on-off':''}" style="${off?'background:rgba(240,68,58,.22)':''}">${off?`Hamulec WYŁĄCZONY<br><small>zostaje ${e.wy}% masy ham.</small>`:'Hamulec sprawny<br><small>dotknij, aby wyłączyć</small>'}</button></div>`;}).join('');
+  $('bkNrs').querySelectorAll('button[data-off]').forEach(b=>b.onclick=()=>{const i=+b.dataset.off;BK.off[i]=!BK.off[i];bkSave();bkRender();});
   $('bkNrs').querySelectorAll('input').forEach(inp=>inp.oninput=()=>{BK.nr[+inp.dataset.nr]=inp.value;bkSave();bkOut();});
   const opt=v=>STAC.map(st=>`<option ${st===v?'selected':''}>${st}</option>`).join('');
   $('bkFrom').innerHTML=opt(BK.from); $('bkTo').innerHTML=opt(BK.to);
   bkPwSync(false);
   $('bkYes').innerHTML=YES.map(([k,l])=>`<button data-y="${k}" class="${BK.yes[k]?'on':''}">${l}: ${BK.yes[k]?'TAK':'NIE'}</button>`).join('');
   $('bkYes').querySelectorAll('button').forEach(b=>b.onclick=()=>{BK.yes[b.dataset.y]=!BK.yes[b.dataset.y];bkSave();bkRender();});
-  $('bkTab').innerHTML='<table class="hist"><tr><th>Typ</th><th>próżny m / mh</th><th>ładowny m / mh</th></tr>'+EZT.map(e=>`<tr><td>${esc(e.nm)}</td><td>${e.pr[0]} / ${e.pr[1]}</td><td>${e.ld[0]} / ${e.ld[1]}</td></tr>`).join('')+'</table>';
+  $('bkTab').innerHTML='<table class="hist"><tr><th>Typ</th><th>dł. [m]</th><th>próżny m / mh</th><th>ładowny m / mh</th><th>wył. ham. – zostaje</th></tr>'+EZT.map(e=>`<tr><td>${esc(e.nm)}</td><td>${e.len}</td><td>${e.pr[0]} / ${e.pr[1]}</td><td>${e.ld[0]} / ${e.ld[1]}</td><td>${e.wy}% (${Math.floor(e.pr[1]*e.wy/100)} / ${Math.floor(e.ld[1]*e.wy/100)})</td></tr>`).join('')+'</table>';
   bkOut(); bkHist();
 }
 function bkPwSync(fromRel){
@@ -1453,7 +1459,9 @@ function bkOut(){
   const r=bkCalc();
   $('bkRes').innerHTML=[['Mos',r.Mos,'t'],['Mo',r.Mo,'t'],['Mhw',r.Mhw,'t'],['Mhr',r.Mhr,'t'],['Pw',r.Pw,'%'],['Pr',r.Pr,'%']].map(([l,v,u])=>`<div><small>${l}</small><b>${v}<i> ${u}</i></b></div>`).join('');
   const v=$('bkVerd'); v.className='verdict '+(r.Pw?(r.ok?'ok':'bad'):'');
-  v.textContent=!r.Pw?'Wpisz Pw.':r.ok?`✓ Masa hamująca wystarczająca: Mhr ${r.Mhr} t ≥ Mhw ${r.Mhw} t (zapas ${r.Mhr-r.Mhw} t)`:`✗ Za mała masa hamująca: brakuje ${r.Mhw-r.Mhr} t`;
+  const offTxt=r.det.filter(d=>d.off).map(d=>`${d.e.sh}: ${d.mh0} t × ${d.e.wy}% = ${d.mh} t`).join('; ');
+  v.innerHTML=(!r.Pw?'Wpisz Pw.':r.ok?`✓ Masa hamująca wystarczająca: Mhr ${r.Mhr} t ≥ Mhw ${r.Mhw} t (zapas ${r.Mhr-r.Mhw} t)`:`✗ Za mała masa hamująca: brakuje ${r.Mhw-r.Mhr} t – przy tym Pw pociąg nie może jechać`)
+    +`<div style="font-weight:500;font-size:13px;margin-top:4px;opacity:.9">Długość składu: ${r.len} m${offTxt?` · wyłączony hamulec – ${esc(offTxt)}`:''}</div>`;
   const rows=bkRows(r); $('bkPaper').innerHTML=paperHtml(rows.map(x=>x),r.ok); if(!$('paperFull').hidden) $('bkPaperFull').innerHTML=paperHtml(rows,r.ok);
   $('bkCard').innerHTML=rows.map(([n,l,val])=>`<tr><td class="n">${n}</td><td class="l">${esc(l)}</td><td class="v">${esc(String(val))}</td></tr>`).join('');
 }
@@ -1466,7 +1474,7 @@ function bkHist(){
 }
 $('bkKind').querySelectorAll('button').forEach(b=>b.onclick=()=>{BK.kind=b.dataset.k;bkSave();bkRender();});
 $('bkLoad').querySelectorAll('button').forEach(b=>b.onclick=()=>{BK.load=b.dataset.l;bkSave();bkRender();});
-$('bkSet').onchange=()=>{BK.set=$('bkSet').value;bkSave();bkRender();};
+$('bkSet').onchange=()=>{BK.set=$('bkSet').value;BK.off=[false,false];bkSave();bkRender();};
 $('bkFrom').onchange=()=>{BK.from=$('bkFrom').value;bkPwSync(true);bkSave();bkOut();};
 $('bkTo').onchange=()=>{BK.to=$('bkTo').value;bkPwSync(true);bkSave();bkOut();};
 $('bkPw').oninput=()=>{BK.pw=$('bkPw').value;BK.pwMan=true;bkPwSync(false);bkSave();bkOut();};
